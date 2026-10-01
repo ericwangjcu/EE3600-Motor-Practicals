@@ -16,4 +16,3 @@ The browser communicates directly with the Pico using Web Serial. Serial data st
 
 See `firmware/README.md`.
 
-GitHub Pages deployment is configured through `.github/workflows/pages.yml`.

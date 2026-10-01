@@ -1,18 +1,29 @@
-# Pico firmware
+# Pico firmware for EE3600 Practical 1
 
-The current hosted HTML identifies these firmware variants:
+The hosted HTML page is now focused on **Practical 1 — DC Motor Identification**.
 
-- Practical 1: `EE3600_Practical_1_Encoder_GP26_GP27.uf2`
-- Practical 2: `EE3600_Practical_2_Speed_PID_GP26_GP27.uf2`
+## Firmware file
 
-Encoder wiring:
+Upload the tested UF2 file to this folder using the clean filename:
+
+`EE3600_Practical_1_2_Combined_GP26_GP27.uf2`
+
+The current practical page uses only the Practical 1 encoder/speed-measurement functions of the combined firmware.
+
+## Encoder wiring
 
 - Encoder A → GP26
 - Encoder B → GP27
+- The HTML default CPR is 937 for the demonstrated platform. Confirm the platform specification with the tutor if a different motor/gearbox is used.
 
-Practical 2 motor drive:
+## Loading the UF2 onto the Pico
 
-- Motor 1 forward → GP3
-- Motor 1 reverse → GP2
+1. Switch off the bench motor supply.
+2. Unplug the Pico USB cable.
+3. Hold **BOOTSEL** while plugging the Pico back into USB.
+4. A drive named **RPI-RP2** appears.
+5. Copy the UF2 file onto the RPI-RP2 drive.
+6. The Pico reboots automatically.
+7. Open the Practical 1 webpage and click **Connect Pico**.
 
-The UF2 binaries are not included yet. Add the tested UF2 files here when ready.
+The motor itself is powered from the bench supply during Practical 1. Do not power the motor from a Pico GPIO pin.

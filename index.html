@@ -14,7 +14,7 @@
 <body><main>
 <section class="card">
   <div class="top">
-    <div><h1>EE3600 DC Motor Practicals</h1><p style="margin:4px 0">Practical 1 measures the motor. Practical 2 closes the loop with PID speed control.</p></div>
+    <div><h1>EE3600 DC Motor Practicals</h1><p style="margin:4px 0">One Pico firmware supports both practicals. Practical 1 measures the motor; Practical 2 closes the loop with PID speed control.</p></div>
     <div class="status"><span id="dot" class="dot"></span><b id="connText">Not connected</b><button id="connect" class="primary">Connect Pico</button></div>
   </div>
   <div id="fw" class="firmware">Firmware: not detected</div>
@@ -23,17 +23,25 @@
 <section class="card">
   <h2>How to use this page</h2>
   <div class="note safe">
-    <b>1.</b> Connect the Pico to the computer by USB.<br>
-    <b>2.</b> Open this page in desktop Chrome or Edge.<br>
-    <b>3.</b> Click <b>Connect Pico</b> and select the Pico serial port.<br>
-    <b>4.</b> Select the required practical below and follow the on-screen controls.
+    <b>1.</b> The Pico is already pre-flashed with the firmware for both practicals.<br>
+    <b>2.</b> Connect the Pico to the computer by USB.<br>
+    <b>3.</b> Open this page in desktop Chrome or Edge.<br>
+    <b>4.</b> Click <b>Connect Pico</b> and select the Pico serial port.<br>
+    <b>5.</b> Select Practical 1 or Practical 2 below and follow the on-screen controls.
   </div>
+  <p class="muted" style="margin:12px 0 0">
+    <b>If the Pico is not working correctly:</b>
+    try re-flashing the combined firmware:
+    <a href="firmware/EE3600_Practical_1_2_Combined_GP26_GP27.uf2" download><b>Download EE3600 Practical 1 &amp; 2 UF2</b></a>
+  </p>
 </section>
 
 <section class="card"><div class="tabs">
   <button class="tab active" data-page="p1"><b>Practical 1 — Motor Measurement</b><small>Bench supply drives the motor; Pico measures encoder speed only</small></button>
   <button class="tab" data-page="p2"><b>Practical 2 — PID Speed Control</b><small>Pico measures speed and drives Motor 1 through the Kitronik board</small></button>
 </div></section>
+
+<section class="card"><b>Firmware:</b> One combined firmware is used for both practicals. Re-flash only if the Pico is not working correctly.</section>
 
 <section class="card">
   <div class="top">
@@ -50,7 +58,7 @@
 <div id="page-p1" class="page active">
 <section class="card">
   <h2>Practical 1 setup</h2>
-  <p class="note safe"><b>Flash:</b> <span class="fwfile">EE3600_Practical_1_Encoder_GP26_GP27.uf2</span>. The motor is powered from the bench power supply. This firmware leaves the Kitronik Motor 1 output disabled; the Pico is used only for encoder/speed measurement.</p>
+  <p class="note safe"><b>Practical 1 mode:</b> use the combined firmware. The motor is powered from the bench power supply. When this tab is selected the page sends <b>STOP</b>, so the Pico motor outputs GP2/GP3 are held off; the Pico is used only for encoder/speed measurement.</p>
   <div class="grid">
     <div class="metric"><span>Speed</span><strong id="p1Rpm">0.0 rpm</strong></div>
     <div class="metric"><span>Encoder count</span><strong id="p1Count">0</strong></div>
@@ -80,7 +88,7 @@
 <div id="page-p2" class="page">
 <section class="card">
   <h2>Practical 2 setup</h2>
-  <p class="note"><b>Flash:</b> <span class="fwfile">EE3600_Practical_2_Speed_PID_GP26_GP27.uf2</span>. Connect the motor to <b>Motor 1</b> on the Kitronik board. Motor drive is GP3 forward / GP2 reverse; encoder feedback remains GP26 / GP27.</p>
+  <p class="note"><b>Practical 2 mode:</b> use the same combined firmware. Connect the motor to <b>Motor 1</b> on the Kitronik board. Motor drive is GP3 forward / GP2 reverse; encoder feedback remains GP26 / GP27.</p>
   <div class="grid">
     <div class="metric"><span>Target speed</span><strong id="p2TargetLive">0.0 rpm</strong></div>
     <div class="metric"><span>Measured speed</span><strong id="p2Rpm">0.0 rpm</strong></div>
@@ -106,7 +114,7 @@
     <h2>Response recording</h2>
     <div class="row"><button id="p2RecStart" disabled>Start recording</button><button id="p2RecStop" disabled>Stop recording</button><button id="p2Clear">Clear plot</button><button id="p2Download" disabled>Download CSV</button></div>
     <p id="p2RecState" class="muted">Not recording</p>
-    <p id="p2Capability" class="badge">Practical 2 firmware not detected</p>
+    <p id="p2Capability" class="badge">Combined firmware not detected</p>
   </div>
 </section>
 <section class="card"><h2>Speed response — target vs measured</h2><canvas id="p2Chart"></canvas></section>
@@ -123,32 +131,33 @@ let port=null,reader=null,writer=null,reading=false,rx="",fwType="unknown",lates
 let p1Recording=false,p2Recording=false,p1Start=0,p2Start=0,p1Log=[],p2Log=[],p1Plot=[],p2Plot=[],points=[];
 function delay(ms){return new Promise(r=>setTimeout(r,ms))}
 function log(s){const c=$("console");c.textContent+=s+"\n";if(c.textContent.length>35000)c.textContent=c.textContent.slice(-26000);c.scrollTop=c.scrollHeight}
-function setConnected(on){$("dot").className="dot"+(on?" on":" ");$("connText").textContent=on?"Pico connected":"Not connected";$("connect").textContent=on?"Disconnect":"Connect Pico";["applyEncoder","p1RecStart","p1RecStop","p1Capture","applyPid","stopPid","p2RecStart","p2RecStop","sendCmd","statusBtn"].forEach(id=>$(id).disabled=!on);updateRunEnable()}
-function updateRunEnable(){const can=!!port&&(fwType==="p2"||fwType==="legacyDual");$("runPid").disabled=!can;if(fwType==="p2"){ $("p2Capability").textContent="Practical 2 speed-PID firmware detected";$("p2Capability").className="badge ok" } else if(fwType==="p1"){ $("p2Capability").textContent="Practical 1 firmware detected — flash Practical 2 UF2 first";$("p2Capability").className="badge bad" } else if(fwType==="legacyDual"){ $("p2Capability").textContent="Legacy dual-PID firmware detected";$("p2Capability").className="badge" } else { $("p2Capability").textContent="Practical 2 firmware not detected";$("p2Capability").className="badge" }}
+function updateRecordingButtons(){const on=!!port;$("p1RecStart").disabled=!on||p1Recording;$("p1RecStop").disabled=!on||!p1Recording;$("p2RecStart").disabled=!on||p2Recording;$("p2RecStop").disabled=!on||!p2Recording}
+function setConnected(on){$("dot").className="dot"+(on?" on":" ");$("connText").textContent=on?"Pico connected":"Not connected";$("connect").textContent=on?"Disconnect":"Connect Pico";["applyEncoder","p1Capture","applyPid","stopPid","sendCmd","statusBtn"].forEach(id=>$(id).disabled=!on);updateRecordingButtons();updateRunEnable()}
+function updateRunEnable(){const can=!!port&&(fwType==="combined"||fwType==="p2"||fwType==="legacyDual");$("runPid").disabled=!can;if(fwType==="combined"){ $("p2Capability").textContent="Combined Practical 1 + Practical 2 firmware detected";$("p2Capability").className="badge ok" } else if(fwType==="p2"){ $("p2Capability").textContent="Practical 2 firmware detected (also supports Practical 1 monitoring)";$("p2Capability").className="badge ok" } else if(fwType==="p1"){ $("p2Capability").textContent="Old Practical 1-only firmware detected — flash the combined UF2";$("p2Capability").className="badge bad" } else if(fwType==="legacyDual"){ $("p2Capability").textContent="Legacy dual-PID firmware detected";$("p2Capability").className="badge" } else { $("p2Capability").textContent="Combined firmware not detected";$("p2Capability").className="badge" }}
 async function send(s){if(!writer){log("Not connected: "+s);return false}try{await writer.write(enc.encode(s+"\r\n"));log("> "+s);return true}catch(e){log("Send error: "+e.message);return false}}
 async function seq(arr,gap=80){for(const s of arr){if(!(await send(s)))return false;await delay(gap)}return true}
-async function connect(){if(port){await disconnect();return}if(!("serial" in navigator)){alert("Web Serial is not available. Use current Chrome or Edge and launch START_EE3600_MOTOR_PRACTICALS.bat.");return}try{port=await navigator.serial.requestPort();await port.open({baudRate:115200});writer=port.writable.getWriter();reading=true;setConnected(true);readLoop();await delay(200);await seq(["HELLO","STREAM,ON","STATUS"]);await delay(100);await applyEncoder()}catch(e){log("Connection error: "+e.message);try{if(port)await port.close()}catch(_){}port=null;setConnected(false)}}
+async function connect(){if(port){await disconnect();return}if(!("serial" in navigator)){alert("Web Serial is not available. Use the current desktop version of Chrome or Edge.");return}try{port=await navigator.serial.requestPort();await port.open({baudRate:115200});writer=port.writable.getWriter();reading=true;setConnected(true);readLoop();await delay(200);await seq(["HELLO","STOP","STREAM,ON","STATUS"]);await delay(100);await applyEncoder()}catch(e){log("Connection error: "+e.message);try{if(port)await port.close()}catch(_){}port=null;setConnected(false)}}
 async function disconnect(){reading=false;p1Recording=false;p2Recording=false;try{if(reader){await reader.cancel();reader.releaseLock()}}catch(_){}reader=null;try{if(writer)writer.releaseLock()}catch(_){}writer=null;try{if(port)await port.close()}catch(_){}port=null;fwType="unknown";latest=null;$("fw").textContent="Firmware: not detected";setConnected(false)}
 async function readLoop(){while(port&&reading){try{reader=port.readable.getReader();while(reading){const {value,done}=await reader.read();if(done)break;rx+=dec.decode(value,{stream:true}).replace(/\0/g,"");let i;while((i=rx.indexOf("\n"))>=0){const line=rx.slice(0,i).replace(/\r/g,"").trim();rx=rx.slice(i+1);if(line)handleLine(line)}}}catch(e){if(reading)log("Read error: "+e.message)}finally{try{if(reader)reader.releaseLock()}catch(_){}reader=null}}}
-function handleLine(line){if(!line.startsWith("DATA2,"))log(line);if(line.startsWith("INFO,EE3600_PRAC1_ENCODER")){fwType="p1";$("fw").textContent="Firmware: "+line;updateRunEnable()}else if(line.startsWith("INFO,EE3600_PRAC2_SPEED_PID")){fwType="p2";$("fw").textContent="Firmware: "+line;updateRunEnable()}else if(line.startsWith("INFO,EE3600_MOTOR_DUAL_PID")){fwType="legacyDual";$("fw").textContent="Firmware: "+line;updateRunEnable()}
- if(!line.startsWith("DATA2,"))return;const f=line.split(",");if(f.length<15)return;const r={ms:+f[1],mode:f[2],targetDeg:+f[3],targetRpm:+f[4],pos:+f[5],rpm:+f[6],pwm:+f[7],speedKp:+f[11],speedKi:+f[12],speedKd:+f[13],count:+f[14]};if(![r.ms,r.targetRpm,r.rpm,r.pwm,r.count].every(Number.isFinite))return;latest=r;updateLive(r);const now=performance.now();p1Plot.push({...r});p2Plot.push({...r});if(p1Plot.length>900)p1Plot.shift();if(p2Plot.length>900)p2Plot.shift();if(p1Recording){p1Log.push({...r,pc:(now-p1Start)/1000});$("p1Samples").textContent=p1Log.length}if(p2Recording)p2Log.push({...r,pc:(now-p2Start)/1000})}
+function handleLine(line){if(!line.startsWith("DATA2,"))log(line);if(line.startsWith("INFO,EE3600_P1_P2_COMBINED")){fwType="combined";$("fw").textContent="Firmware: "+line;updateRunEnable()}else if(line.startsWith("INFO,EE3600_PRAC1_ENCODER")){fwType="p1";$("fw").textContent="Firmware: "+line;updateRunEnable()}else if(line.startsWith("INFO,EE3600_PRAC2_SPEED_PID")){fwType="p2";$("fw").textContent="Firmware: "+line;updateRunEnable()}else if(line.startsWith("INFO,EE3600_MOTOR_DUAL_PID")){fwType="legacyDual";$("fw").textContent="Firmware: "+line;updateRunEnable()}
+ if(!line.startsWith("DATA2,"))return;const f=line.split(",");if(f.length<15)return;const r={ms:+f[1],mode:f[2],targetDeg:+f[3],targetRpm:+f[4],pos:+f[5],rpm:+f[6],pwm:+f[7],speedKp:+f[11],speedKi:+f[12],speedKd:+f[13],count:+f[14]};if(![r.ms,r.targetRpm,r.rpm,r.pwm,r.count].every(Number.isFinite))return;latest=r;updateLive(r);const now=performance.now();if(p1Recording){p1Log.push({...r,pc:(now-p1Start)/1000});p1Plot.push({...r});if(p1Plot.length>900)p1Plot.shift();$("p1Samples").textContent=p1Log.length}if(p2Recording){p2Log.push({...r,pc:(now-p2Start)/1000});p2Plot.push({...r});if(p2Plot.length>900)p2Plot.shift()}}
 function updateLive(r){$("p1Rpm").textContent=r.rpm.toFixed(1)+" rpm";$("p1Count").textContent=String(r.count);let d="Stopped";if(Math.abs(r.rpm)>=0.5)d=r.rpm>0?"Forward":"Reverse";$("p1Dir").textContent=d;$("p2TargetLive").textContent=r.targetRpm.toFixed(1)+" rpm";$("p2Rpm").textContent=r.rpm.toFixed(1)+" rpm";$("p2Error").textContent=(r.targetRpm-r.rpm).toFixed(1)+" rpm";$("p2Pwm").textContent=r.pwm.toFixed(1)+"%";if(lastCount!==null&&r.count!==lastCount){$("encBadge").textContent="Encoder pulses detected";$("encBadge").className="badge ok"}lastCount=r.count}
 async function applyEncoder(){const c=Math.max(1,Math.round(+("0"+$("cpr").value)||937)),s=+$("encSign").value;await seq(["CPR,"+c,"ENCSIGN,"+s,"STATUS"])}
-function startP1(){p1Log=[];p1Start=performance.now();p1Recording=true;$("p1Samples").textContent="0";$("p1RecState").textContent="Recording...";$("p1Download").disabled=true}
-function stopP1(){p1Recording=false;$("p1RecState").textContent="Stopped — "+p1Log.length+" samples";$("p1Download").disabled=!p1Log.length}
+function startP1(){if(!port||p1Recording)return;p1Log=[];p1Plot=[];p1Start=performance.now();p1Recording=true;$("p1Samples").textContent="0";$("p1RecState").textContent="Recording...";$("p1Download").disabled=true;updateRecordingButtons()}
+function stopP1(){if(!p1Recording)return;p1Recording=false;$("p1RecState").textContent="Stopped — "+p1Log.length+" samples (plot frozen)";$("p1Download").disabled=!p1Log.length;updateRecordingButtons()}
 function capturePoint(){if(!latest)return;const v=+$("p1Voltage").value,i=+$("p1Current").value;if(!Number.isFinite(v)||!Number.isFinite(i)){alert("Enter valid voltage and current values.");return}points.push({n:points.length+1,v,i,p:v*i,rpm:latest.rpm,count:latest.count});renderPoints();$("p1PointsCsv").disabled=false}
 function renderPoints(){const tb=$("pointsBody");if(!points.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:#777">No points captured</td></tr>';return}tb.innerHTML=points.map(x=>`<tr><td>${x.n}</td><td>${x.v.toFixed(2)}</td><td>${x.i.toFixed(3)}</td><td>${x.p.toFixed(3)}</td><td>${x.rpm.toFixed(1)}</td><td>${x.count}</td></tr>`).join("")}
 function saveCsv(name,header,rows){const blob=new Blob([header+"\n"+rows.join("\n")+"\n"],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function downloadP1(){saveCsv("EE3600_Practical1_speed.csv","pc_time_s,pico_time_ms,rpm,encoder_count",p1Log.map(r=>[r.pc.toFixed(4),r.ms,r.rpm.toFixed(3),r.count].join(",")))}
 function downloadPoints(){saveCsv("EE3600_Practical1_steady_state_points.csv","point,voltage_V,current_A,electrical_power_W,rpm,encoder_count",points.map(x=>[x.n,x.v.toFixed(3),x.i.toFixed(4),x.p.toFixed(4),x.rpm.toFixed(3),x.count].join(",")))}
 async function applyPid(){const kp=Math.max(0,+$("kp").value||0),ki=Math.max(0,+$("ki").value||0),kd=Math.max(0,+$("kd").value||0);await send("PIDSPEED,"+[kp,ki,kd].join(","))}
-async function runPid(){if(!(fwType==="p2"||fwType==="legacyDual")){alert("Flash the Practical 2 speed-PID UF2 first.");return}const t=Math.max(-300,Math.min(300,+$("targetRpm").value||0)),lim=Math.max(5,Math.min(100,+$("pwmLimit").value||30)),kp=Math.max(0,+$("kp").value||0),ki=Math.max(0,+$("ki").value||0),kd=Math.max(0,+$("kd").value||0);await seq(["LIMIT,"+lim,"PIDSPEED,"+[kp,ki,kd].join(","),"SPEED,"+t,"MODE,SPEED"])}
-function startP2(){p2Log=[];p2Start=performance.now();p2Recording=true;$("p2RecState").textContent="Recording...";$("p2Download").disabled=true}
-function stopP2(){p2Recording=false;$("p2RecState").textContent="Stopped — "+p2Log.length+" samples";$("p2Download").disabled=!p2Log.length}
+async function runPid(){if(!(fwType==="combined"||fwType==="p2"||fwType==="legacyDual")){alert("Flash the combined Practical 1 + Practical 2 UF2 first.");return}const t=Math.max(-300,Math.min(300,+$("targetRpm").value||0)),lim=Math.max(5,Math.min(100,+$("pwmLimit").value||30)),kp=Math.max(0,+$("kp").value||0),ki=Math.max(0,+$("ki").value||0),kd=Math.max(0,+$("kd").value||0);await seq(["LIMIT,"+lim,"PIDSPEED,"+[kp,ki,kd].join(","),"SPEED,"+t,"MODE,SPEED"])}
+function startP2(){if(!port||p2Recording)return;p2Log=[];p2Plot=[];p2Start=performance.now();p2Recording=true;$("p2RecState").textContent="Recording...";$("p2Download").disabled=true;updateRecordingButtons()}
+function stopP2(){if(!p2Recording)return;p2Recording=false;$("p2RecState").textContent="Stopped — "+p2Log.length+" samples (plot frozen)";$("p2Download").disabled=!p2Log.length;updateRecordingButtons()}
 function downloadP2(){saveCsv("EE3600_Practical2_PID_speed.csv","pc_time_s,pico_time_ms,target_rpm,measured_rpm,error_rpm,pwm_percent,kp,ki,kd,encoder_count",p2Log.map(r=>[r.pc.toFixed(4),r.ms,r.targetRpm.toFixed(3),r.rpm.toFixed(3),(r.targetRpm-r.rpm).toFixed(3),r.pwm.toFixed(3),r.speedKp.toFixed(5),r.speedKi.toFixed(5),r.speedKd.toFixed(5),r.count].join(",")))}
-function draw(canvas,data,series,fixedY=null){const cv=$(canvas),ctx=cv.getContext("2d"),d=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;if(cv.width!==Math.round(W*d)||cv.height!==Math.round(H*d)){cv.width=Math.round(W*d);cv.height=Math.round(H*d)}ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,W,H);const L=55,R=12,T=12,B=29,w=Math.max(20,W-L-R),h=Math.max(20,H-T-B);ctx.strokeStyle="#dfe3e8";ctx.strokeRect(L,T,w,h);if(data.length<2)return;const t0=data[0].ms,t1=data[data.length-1].ms,ts=Math.max(100,t1-t0);let vals=[];series.forEach(s=>data.forEach(r=>vals.push(r[s.k])));let lo=fixedY?fixedY[0]:Math.min(...vals),hi=fixedY?fixedY[1]:Math.max(...vals);if(!fixedY){if(hi-lo<10){lo-=5;hi+=5}const p=(hi-lo)*.1;lo-=p;hi+=p}const X=t=>L+(t-t0)/ts*w,Y=y=>T+(hi-y)/(hi-lo)*h;for(let i=0;i<=4;i++){const y=T+h*i/4,v=hi-(hi-lo)*i/4;ctx.strokeStyle="#eef0f2";ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(L+w,y);ctx.stroke();ctx.fillStyle="#666";ctx.font="11px Arial";ctx.textAlign="right";ctx.fillText(v.toFixed(0),L-6,y+4)}const cols=["#0b57d0","#d93025","#188038"];series.forEach((s,j)=>{ctx.strokeStyle=cols[j%cols.length];ctx.lineWidth=2;ctx.beginPath();data.forEach((r,i)=>{const x=X(r.ms),y=Y(r[s.k]);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()});ctx.fillStyle="#666";ctx.textAlign="center";ctx.fillText(((t1-t0)/1000).toFixed(1)+" s",L+w/2,H-7)}
+function draw(canvas,data,series,fixedY=null){const cv=$(canvas),ctx=cv.getContext("2d"),d=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;if(cv.width!==Math.round(W*d)||cv.height!==Math.round(H*d)){cv.width=Math.round(W*d);cv.height=Math.round(H*d)}ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,W,H);const L=55,R=12,T=12,B=29,w=Math.max(20,W-L-R),h=Math.max(20,H-T-B);ctx.strokeStyle="#dfe3e8";ctx.strokeRect(L,T,w,h);if(data.length<2)return;const t0=data[0].ms,t1=data[data.length-1].ms,ts=Math.max(100,t1-t0);let vals=[];series.forEach(s=>data.forEach(r=>vals.push(r[s.k])));let lo=fixedY?fixedY[0]:Math.min(...vals),hi=fixedY?fixedY[1]:Math.max(...vals);if(!fixedY){if(hi-lo<10){lo-=5;hi+=5}const p=(hi-lo)*.1;lo-=p;hi+=p}const X=t=>L+(t-t0)/ts*w,Y=y=>T+(hi-y)/(hi-lo)*h;for(let i=0;i<=4;i++){const y=T+h*i/4,v=hi-(hi-lo)*i/4;ctx.strokeStyle="#eef0f2";ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(L+w,y);ctx.stroke();ctx.fillStyle="#666";ctx.font='11px "Century Gothic", Arial';ctx.textAlign="right";ctx.fillText(v.toFixed(0),L-6,y+4)}const cols=["#0b57d0","#d93025","#188038"];series.forEach((s,j)=>{ctx.strokeStyle=cols[j%cols.length];ctx.lineWidth=2;ctx.beginPath();data.forEach((r,i)=>{const x=X(r.ms),y=Y(r[s.k]);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()});ctx.fillStyle="#666";ctx.textAlign="center";ctx.fillText(((t1-t0)/1000).toFixed(1)+" s",L+w/2,H-7)}
 function animate(){draw("p1Chart",p1Plot,[{k:"rpm"}]);draw("p2Chart",p2Plot,[{k:"targetRpm"},{k:"rpm"}]);draw("p2PwmChart",p2Plot,[{k:"pwm"}],[-100,100]);requestAnimationFrame(animate)}requestAnimationFrame(animate);
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("page-"+b.dataset.page).classList.add("active")});
+document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("page-"+b.dataset.page).classList.add("active");if(port){await send("STOP");if(b.dataset.page==="p1")log("Practical 1 selected: Pico motor outputs forced OFF; bench supply drives the motor.")}});
 $("connect").onclick=connect;$("applyEncoder").onclick=applyEncoder;$("p1RecStart").onclick=startP1;$("p1RecStop").onclick=stopP1;$("p1Clear").onclick=()=>{p1Log=[];p1Plot=[];$("p1Samples").textContent="0";$("p1Download").disabled=true;$("p1RecState").textContent="Not recording"};$("p1Download").onclick=downloadP1;$("p1Capture").onclick=capturePoint;$("p1PointsCsv").onclick=downloadPoints;$("applyPid").onclick=applyPid;$("runPid").onclick=runPid;$("stopPid").onclick=()=>send("STOP");$("p2RecStart").onclick=startP2;$("p2RecStop").onclick=stopP2;$("p2Clear").onclick=()=>{p2Log=[];p2Plot=[];$("p2Download").disabled=true;$("p2RecState").textContent="Not recording"};$("p2Download").onclick=downloadP2;$("sendCmd").onclick=()=>{const s=$("cmd").value.trim();if(s)send(s);$("cmd").value=""};$("cmd").addEventListener("keydown",e=>{if(e.key==="Enter")$("sendCmd").click()});$("statusBtn").onclick=()=>send("STATUS");
 setConnected(false);
 </script>

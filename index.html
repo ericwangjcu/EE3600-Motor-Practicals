@@ -4,161 +4,284 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-<title>EE3600 Motor Practicals</title>
+<title>EE3600 Practical 1 — DC Motor Identification</title>
 <style>
 :root{--blue:#0b57d0;--green:#137333;--red:#b3261e;--amber:#8a5b00;--line:#dfe3e8;--bg:#f5f7fa;--muted:#5f6368}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#202124;font-family:"Century Gothic","Avenir Next",Avenir,Futura,Arial,sans-serif}main{max-width:1180px;margin:20px auto;padding:0 18px 42px}.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}h1{font-size:27px;margin:0 0 4px}h2{font-size:19px;margin:0 0 12px}h3{font-size:16px;margin:0 0 10px}p{line-height:1.45;color:var(--muted)}.top{display:flex;justify-content:space-between;gap:16px;align-items:center}.status{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.dot{width:12px;height:12px;border-radius:50%;background:#9aa0a6}.dot.on{background:#188038}button{padding:10px 14px;border:1px solid #cfd4da;border-radius:7px;background:#fff;font-weight:700;cursor:pointer}button.primary{background:var(--blue);border-color:var(--blue);color:#fff}button.green{background:var(--green);border-color:var(--green);color:#fff}button.stop{background:#d93025;border-color:#d93025;color:#fff}button:disabled{opacity:.42;cursor:not-allowed}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tab{text-align:left;padding:15px}.tab b{display:block;font-size:17px}.tab small{font-weight:400;color:var(--muted)}.tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}.tab.active small{color:#e8f0fe}.page{display:none}.page.active{display:block}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#f8f9fa;border-radius:9px;padding:13px}.metric span{display:block;color:var(--muted);font-size:12px}.metric strong{display:block;font-size:22px;margin-top:5px;color:var(--blue)}.twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px}.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 12px}label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:700}input,select{padding:9px;border:1px solid #bdc1c6;border-radius:6px;font:inherit;background:#fff}.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#fef7e0;color:#7a5700;font-size:12px;font-weight:700}.badge.ok{background:#e6f4ea;color:#137333}.badge.bad{background:#fce8e6;color:#b3261e}.note{border-left:4px solid #f9ab00;padding:9px 12px;background:#fff8e1;color:#4f3b00;border-radius:3px}.safe{border-left-color:#188038;background:#e6f4ea;color:#174b2b}.firmware{font:12px Consolas,monospace;color:var(--muted);margin-top:8px;word-break:break-word}canvas{width:100%;height:300px;border:1px solid #e0e3e7;border-radius:8px;background:#fff;display:block}.smallcanvas{height:170px}pre{height:145px;overflow:auto;background:#17191d;color:#d8dbe2;padding:11px;border-radius:7px;font:12px Consolas,monospace;white-space:pre-wrap}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid #e7eaee;text-align:right}th:first-child,td:first-child{text-align:left}.muted{color:var(--muted);font-size:13px}.fwfile{font-family:Consolas,monospace;font-size:13px;background:#f1f3f4;padding:3px 6px;border-radius:5px}.hidden{display:none!important}
-@media(max-width:800px){.top,.twocol{display:block}.status{margin-top:12px}.grid,.formgrid{grid-template-columns:1fr 1fr}.twocol>div{margin-bottom:14px}}@media(max-width:520px){.tabs,.grid,.formgrid{grid-template-columns:1fr}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#202124;font-family:"Century Gothic","Avenir Next",Avenir,Futura,Arial,sans-serif}main{max-width:1080px;margin:20px auto;padding:0 18px 42px}.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}h1{font-size:27px;margin:0 0 4px}h2{font-size:19px;margin:0 0 12px}h3{font-size:16px;margin:16px 0 8px}p,li{line-height:1.5;color:var(--muted)}.top{display:flex;justify-content:space-between;gap:16px;align-items:center}.status{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.dot{width:12px;height:12px;border-radius:50%;background:#9aa0a6}.dot.on{background:#188038}button,.buttonlink{padding:10px 14px;border:1px solid #cfd4da;border-radius:7px;background:#fff;font-weight:700;cursor:pointer;text-decoration:none;color:#202124;display:inline-block}button.primary,.buttonlink.primary{background:var(--blue);border-color:var(--blue);color:#fff}button.green{background:var(--green);border-color:var(--green);color:#fff}button:disabled{opacity:.42;cursor:not-allowed}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#f8f9fa;border-radius:9px;padding:13px}.metric span{display:block;color:var(--muted);font-size:12px}.metric strong{display:block;font-size:21px;margin-top:5px;color:var(--blue)}.twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px}.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 12px}label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:700}input,select{padding:9px;border:1px solid #bdc1c6;border-radius:6px;font:inherit;background:#fff}.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#fef7e0;color:#7a5700;font-size:12px;font-weight:700}.badge.ok{background:#e6f4ea;color:#137333}.note{border-left:4px solid #f9ab00;padding:10px 12px;background:#fff8e1;color:#4f3b00;border-radius:3px}.safe{border-left-color:#188038;background:#e6f4ea;color:#174b2b}.danger{border-left-color:#d93025;background:#fce8e6;color:#7d211b}.firmware{font:12px Consolas,monospace;color:var(--muted);margin-top:8px;word-break:break-word}canvas{width:100%;height:300px;border:1px solid #e0e3e7;border-radius:8px;background:#fff;display:block}pre{height:145px;overflow:auto;background:#17191d;color:#d8dbe2;padding:11px;border-radius:7px;font:12px Consolas,monospace;white-space:pre-wrap}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid #e7eaee;text-align:right}th:first-child,td:first-child{text-align:left}.muted{color:var(--muted);font-size:13px}.eq{font-family:"Cambria Math","Times New Roman",serif;font-size:18px;text-align:center;color:#202124;margin:10px 0}.steps{margin:7px 0 0 20px;padding:0}.steps li{margin:5px 0}.checklist li{margin:7px 0}.sectiontag{font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.04em}
+@media(max-width:800px){.top,.twocol{display:block}.status{margin-top:12px}.grid,.formgrid{grid-template-columns:1fr 1fr}.twocol>div{margin-bottom:14px}}@media(max-width:520px){.grid,.formgrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body><main>
 <section class="card">
   <div class="top">
-    <div><h1>EE3600 DC Motor Practicals</h1><p style="margin:4px 0">One Pico firmware supports both practicals. Practical 1 measures the motor; Practical 2 closes the loop with PID speed control.</p></div>
+    <div>
+      <div class="sectiontag">EE3600 / EE5610</div>
+      <h1>Practical 1 — DC Motor Identification</h1>
+      <p style="margin:4px 0">Measure the real motor response, identify a first-order model, then determine the physical motor parameters needed in Assignment 1.</p>
+    </div>
     <div class="status"><span id="dot" class="dot"></span><b id="connText">Not connected</b><button id="connect" class="primary">Connect Pico</button></div>
   </div>
   <div id="fw" class="firmware">Firmware: not detected</div>
 </section>
 
 <section class="card">
-  <h2>How to use this page</h2>
-  <div class="note safe">
-    <b>1.</b> The Pico is already pre-flashed with the firmware for both practicals.<br>
-    <b>2.</b> Connect the Pico to the computer by USB.<br>
-    <b>3.</b> Open this page in desktop Chrome or Edge.<br>
-    <b>4.</b> Click <b>Connect Pico</b> and select the Pico serial port.<br>
-    <b>5.</b> Select Practical 1 or Practical 2 below and follow the on-screen controls.
-  </div>
-  <p class="muted" style="margin:12px 0 0">
-    <b>If the Pico is not working correctly:</b>
-    try re-flashing the combined firmware:
-    <a href="firmware/EE3600_Practical_1_2_Combined_GP26_GP27.uf2" download><b>Download EE3600 Practical 1 &amp; 2 UF2</b></a>
-  </p>
+  <h2>Why this practical matters for Assignment 1</h2>
+  <p>From the measured speed step response you will first identify an experimental first-order transfer function. You will then determine the physical parameters <b>R, K<sub>e</sub>, K<sub>t</sub>, D and J</b>. The first-order model is useful for checking the measured response, but Assignment 1 needs the physical parameters because additional gearbox, wheel, vehicle inertia, damping and load terms must be reflected back to the motor.</p>
+  <div class="note safe"><b>Keep your final parameter table and CSV files.</b> You will use these values directly in Assignment 1.</div>
 </section>
 
-<section class="card"><div class="tabs">
-  <button class="tab active" data-page="p1"><b>Practical 1 — Motor Measurement</b><small>Bench supply drives the motor; Pico measures encoder speed only</small></button>
-  <button class="tab" data-page="p2"><b>Practical 2 — PID Speed Control</b><small>Pico measures speed and drives Motor 1 through the Kitronik board</small></button>
-</div></section>
+<section class="card">
+  <h2>Before you connect power — check your motor platform</h2>
+  <p>Different practical platforms may use different motors. Some motors are rated for approximately 6 V and some for approximately 12 V. The gearbox ratio and rated output speed may also differ. <b>Do not assume that every platform is identical.</b></p>
+  <div class="formgrid">
+    <label>Motor rated voltage (V)<input id="ratedVoltage" type="number" step="0.1" placeholder="Check label/specification"></label>
+    <label>Rated gearbox-output speed (rpm)<input id="ratedSpeed" type="number" step="1" placeholder="Check label/specification"></label>
+    <label>Built-in gearbox ratio N = motor speed / output speed<input id="gearRatio" type="number" min="1" step="0.1" value="21.6"></label>
+    <label>Encoder CPR used by this platform<input id="cpr" type="number" min="1" step="1" value="937"></label>
+  </div>
+  <p class="muted">If you cannot confirm the motor rated voltage, rated output speed or gearbox ratio, stop and ask the tutor before running the motor. The value 21.6 is the ratio used by the demonstrated platform only.</p>
+</section>
 
-<section class="card"><b>Firmware:</b> One combined firmware is used for both practicals. Re-flash only if the Pico is not working correctly.</section>
+<section class="card">
+  <h2>Firmware backup — how to load the UF2 onto the Pico</h2>
+  <p>If the Pico is already running the Practical 1 firmware, you can skip this section. Otherwise:</p>
+  <ol class="steps">
+    <li>Switch <b>OFF</b> the bench power supply and disconnect motor power.</li>
+    <li>Unplug the Pico USB cable.</li>
+    <li>Hold the <b>BOOTSEL</b> button on the Pico while plugging the USB cable back into the computer.</li>
+    <li>A USB drive named <b>RPI-RP2</b> should appear.</li>
+    <li>Copy the supplied <b>.uf2</b> firmware file onto the RPI-RP2 drive.</li>
+    <li>The drive will disappear and the Pico will reboot automatically.</li>
+    <li>Return to this page and click <b>Connect Pico</b>.</li>
+  </ol>
+  <div class="row" style="margin-top:12px">
+    <a class="buttonlink" href="https://github.com/ericwangjcu/EE3600-Motor-Practicals/tree/main/firmware" target="_blank" rel="noopener">Open firmware folder</a>
+  </div>
+  <p class="muted">Encoder wiring used by this setup: Encoder A → GP26, Encoder B → GP27.</p>
+</section>
+
+<section class="card">
+  <h2>Motor power wiring</h2>
+  <div class="note danger"><b>Use the bench power supply to drive the motor in Practical 1.</b> Do not power the motor from a Pico GPIO pin.</div>
+  <p>On the motor platform shown in class, the two motor winding leads are the <b>red</b> and <b>white</b> wires. With the supply switched off, connect the red winding lead to the positive motor-supply terminal and the white winding lead to the negative terminal for the normal test direction. If the motor rotates in the opposite direction, switch the supply off before swapping the two motor leads. Do not connect the encoder wires to the power supply.</p>
+  <ul class="checklist">
+    <li>Set a sensible current limit before starting.</li>
+    <li>Choose an applied voltage that does not exceed the confirmed motor rating.</li>
+    <li>Measure and record the <b>actual motor terminal voltage</b>; do not rely only on a nominal setting.</li>
+    <li>If the motor specification or wiring is unclear, ask the tutor before applying power.</li>
+  </ul>
+</section>
 
 <section class="card">
   <div class="top">
     <div class="row">
-      <label>Encoder CPR<input id="cpr" type="number" min="1" step="1" value="937"></label>
       <label>Encoder sign<select id="encSign"><option value="-1" selected>-1</option><option value="1">+1</option></select></label>
       <button id="applyEncoder" disabled>Apply encoder settings</button>
     </div>
     <span id="encBadge" class="badge">Waiting for encoder</span>
   </div>
-  <p class="muted" style="margin-bottom:0">Encoder A → <b>GP26</b>, Encoder B → <b>GP27</b>. CPR remains adjustable so the measured output-shaft count can be calibrated.</p>
+  <p class="muted" style="margin-bottom:0">The HTML speed display is the <b>gearbox-output speed</b>. The encoder is on the motor shaft, but the firmware CPR is calibrated so that the page reports output-shaft rpm.</p>
 </section>
 
-<div id="page-p1" class="page active">
 <section class="card">
-  <h2>Practical 1 setup</h2>
-  <p class="note safe"><b>Practical 1 mode:</b> use the combined firmware. The motor is powered from the bench power supply. When this tab is selected the page sends <b>STOP</b>, so the Pico motor outputs GP2/GP3 are held off; the Pico is used only for encoder/speed measurement.</p>
+  <h2>Live motor measurement</h2>
   <div class="grid">
-    <div class="metric"><span>Speed</span><strong id="p1Rpm">0.0 rpm</strong></div>
-    <div class="metric"><span>Encoder count</span><strong id="p1Count">0</strong></div>
-    <div class="metric"><span>Direction</span><strong id="p1Dir">Stopped</strong></div>
-    <div class="metric"><span>Recorded samples</span><strong id="p1Samples">0</strong></div>
+    <div class="metric"><span>Gearbox-output speed</span><strong id="outRpm">0.0 rpm</strong></div>
+    <div class="metric"><span>Calculated motor-shaft speed</span><strong id="motorRpm">0.0 rpm</strong></div>
+    <div class="metric"><span>Encoder count</span><strong id="encCount">0</strong></div>
+    <div class="metric"><span>Recorded samples</span><strong id="samples">0</strong></div>
   </div>
+  <p class="muted">Motor-shaft speed shown above is calculated as <b>n<sub>m</sub> = N n<sub>out</sub></b> using the gearbox ratio entered above.</p>
+</section>
+
+<section class="card">
+  <h2>Part 1 — Measure the first-order step response</h2>
+  <ol class="steps">
+    <li>With the motor stopped, start recording.</li>
+    <li>Apply the selected safe motor voltage as a step input.</li>
+    <li>Allow the motor to reach a steady speed, then stop recording.</li>
+    <li>Repeat the test at least three times using the same applied voltage.</li>
+    <li>Use the recorded response to determine the steady output speed and the time constant.</li>
+  </ol>
+  <div class="eq">ω<sub>out</sub>(τ) = 0.632 ω<sub>out,ss</sub></div>
+  <div class="note"><b>Important:</b> the time constant τ is measured directly from the output-speed response. <b>Do not multiply τ by the gearbox ratio.</b> A constant gear ratio changes the speed magnitude but does not change the time constant.</div>
+  <p>For the experimental voltage-to-output-speed model, convert steady output speed to rad/s and use:</p>
+  <div class="eq">K = ω<sub>out,ss</sub> / V &nbsp;&nbsp;&nbsp;&nbsp; G<sub>exp</sub>(s) = K / (τs + 1)</div>
 </section>
 
 <section class="card twocol">
   <div>
     <h2>Continuous speed recording</h2>
-    <p>Use this for a voltage step or any transient test. Set the bench supply manually; the Pico records time, RPM and encoder count.</p>
-    <div class="row"><button id="p1RecStart" class="green" disabled>Start recording</button><button id="p1RecStop" disabled>Stop recording</button><button id="p1Clear">Clear</button><button id="p1Download" disabled>Download CSV</button></div>
-    <p id="p1RecState" class="muted">Not recording</p>
+    <p>Record the complete speed response for the step test.</p>
+    <div class="row"><button id="recStart" class="green" disabled>Start recording</button><button id="recStop" disabled>Stop recording</button><button id="clear">Clear</button><button id="download" disabled>Download CSV</button></div>
+    <p id="recState" class="muted">Not recording</p>
   </div>
   <div>
     <h2>Capture a steady-state point</h2>
-    <div class="formgrid"><label>Supply voltage (V)<input id="p1Voltage" type="number" step="0.01" value="6.00"></label><label>Measured current (A)<input id="p1Current" type="number" step="0.001" value="0.000"></label></div>
-    <div class="row" style="margin-top:11px"><button id="p1Capture" disabled>Capture current RPM</button><button id="p1PointsCsv" disabled>Download points CSV</button></div>
-    <p class="muted">Voltage and current are entered from the bench supply/meter; RPM is read from the Pico at the instant you capture the point.</p>
-  </div>
-</section>
-<section class="card"><h2>Motor speed</h2><canvas id="p1Chart"></canvas></section>
-<section class="card"><h2>Captured steady-state points</h2><div style="overflow:auto"><table><thead><tr><th>#</th><th>Voltage (V)</th><th>Current (A)</th><th>Power (W)</th><th>RPM</th><th>Encoder count</th></tr></thead><tbody id="pointsBody"><tr><td colspan="6" style="text-align:center;color:#777">No points captured</td></tr></tbody></table></div></section>
-</div>
-
-<div id="page-p2" class="page">
-<section class="card">
-  <h2>Practical 2 setup</h2>
-  <p class="note"><b>Practical 2 mode:</b> use the same combined firmware. Connect the motor to <b>Motor 1</b> on the Kitronik board. Motor drive is GP3 forward / GP2 reverse; encoder feedback remains GP26 / GP27.</p>
-  <div class="grid">
-    <div class="metric"><span>Target speed</span><strong id="p2TargetLive">0.0 rpm</strong></div>
-    <div class="metric"><span>Measured speed</span><strong id="p2Rpm">0.0 rpm</strong></div>
-    <div class="metric"><span>Error</span><strong id="p2Error">0.0 rpm</strong></div>
-    <div class="metric"><span>PWM</span><strong id="p2Pwm">0.0%</strong></div>
-  </div>
-</section>
-
-<section class="card twocol">
-  <div>
-    <h2>PID settings</h2>
     <div class="formgrid">
-      <label>Target speed (rpm)<input id="targetRpm" type="number" min="-300" max="300" step="1" value="100"></label>
-      <label>PWM limit (%)<input id="pwmLimit" type="number" min="5" max="100" step="1" value="30"></label>
-      <label>Kp<input id="kp" type="number" min="0" step="0.001" value="0.150"></label>
-      <label>Ki<input id="ki" type="number" min="0" step="0.001" value="0.200"></label>
-      <label>Kd<input id="kd" type="number" min="0" step="0.001" value="0.000"></label>
+      <label>Actual motor terminal voltage V (V)<input id="voltage" type="number" step="0.01" placeholder="Measured value"></label>
+      <label>Steady motor current I (A)<input id="current" type="number" step="0.001" placeholder="Measured value"></label>
     </div>
-    <div class="row" style="margin-top:12px"><button id="applyPid" disabled>Apply gains</button><button id="runPid" class="green" disabled>RUN SPEED PID</button><button id="stopPid" class="stop" disabled>STOP MOTOR</button></div>
-    <p class="note">Start with a conservative PWM limit and PI control (Kd = 0). Increase Kp first, then Ki. Stop immediately if the response is unexpected.</p>
-  </div>
-  <div>
-    <h2>Response recording</h2>
-    <div class="row"><button id="p2RecStart" disabled>Start recording</button><button id="p2RecStop" disabled>Stop recording</button><button id="p2Clear">Clear plot</button><button id="p2Download" disabled>Download CSV</button></div>
-    <p id="p2RecState" class="muted">Not recording</p>
-    <p id="p2Capability" class="badge">Combined firmware not detected</p>
+    <div class="row" style="margin-top:11px"><button id="capture" disabled>Capture current RPM</button><button id="pointsCsv" disabled>Download points CSV</button></div>
+    <p class="muted">Voltage and current are entered from the bench supply/meter. RPM is captured from the Pico at that instant.</p>
   </div>
 </section>
-<section class="card"><h2>Speed response — target vs measured</h2><canvas id="p2Chart"></canvas></section>
-<section class="card"><h2>Controller output</h2><canvas id="p2PwmChart" class="smallcanvas"></canvas></section>
-</div>
+
+<section class="card"><h2>Recorded speed response</h2><canvas id="chart"></canvas></section>
+
+<section class="card">
+  <h2>Captured steady-state points</h2>
+  <div style="overflow:auto"><table><thead><tr><th>#</th><th>Voltage (V)</th><th>Current (A)</th><th>Output rpm</th><th>Motor rpm</th><th>Encoder count</th></tr></thead><tbody id="pointsBody"><tr><td colspan="6" style="text-align:center;color:#777">No points captured</td></tr></tbody></table></div>
+</section>
+
+<section class="card">
+  <h2>Part 2 — Physical parameters for Assignment 1</h2>
+  <p>The HTML speed is gearbox-output speed. For the physical motor equations, convert it to the real motor-shaft speed using the confirmed gearbox ratio:</p>
+  <div class="eq">n<sub>m</sub> = N n<sub>out</sub> &nbsp;&nbsp;&nbsp;&nbsp; ω<sub>m</sub> = 2πn<sub>m</sub>/60</div>
+  <p>Measure the winding resistance <b>R</b> with power removed. At a steady operating point, use the measured terminal voltage, current and motor-shaft speed to estimate:</p>
+  <div class="eq">K<sub>e</sub> = (V − RI) / ω<sub>m</sub></div>
+  <div class="eq">K<sub>t</sub> ≈ K<sub>e</sub> &nbsp; (SI units)</div>
+  <p>Using the steady no-load current, estimate the equivalent damping referred to the motor shaft:</p>
+  <div class="eq">D = K<sub>t</sub>I<sub>ss</sub> / ω<sub>m,ss</sub></div>
+  <p>Then use the measured first-order time constant to determine the equivalent inertia of the motor + built-in gearbox referred to the motor shaft:</p>
+  <div class="eq">J = τ ( D + K<sub>t</sub>K<sub>e</sub>/R )</div>
+  <div class="note safe"><b>This is why Practical 1 does more than fit K and τ.</b> Assignment 1 needs R, K<sub>e</sub>, K<sub>t</sub>, D and J so that the additional drivetrain inertia, damping and loads can be reflected back to the motor correctly.</div>
+</section>
+
+<section class="card">
+  <h2>Part 3 — Optional added-inertia validation</h2>
+  <p>If the supplied disc is used, calculate its output-shaft inertia and reflect it to the motor shaft:</p>
+  <div class="eq">J<sub>disc,out</sub> = ½mr² &nbsp;&nbsp;&nbsp;&nbsp; J<sub>disc,m</sub> = J<sub>disc,out</sub>/N²</div>
+  <p>Predict the new time constant before repeating the test:</p>
+  <div class="eq">τ<sub>new</sub> = (J + J<sub>disc,m</sub>) / ( D + K<sub>t</sub>K<sub>e</sub>/R )</div>
+  <p>Compare the prediction with the measured response. The added inertia should mainly slow the transient response; it should not be treated as a known steady load torque.</p>
+</section>
+
+<section class="card">
+  <h2>What to keep for Assignment 1</h2>
+  <ul class="checklist">
+    <li>Confirmed motor rated voltage, rated output speed and gearbox ratio N.</li>
+    <li>Measured resistance R.</li>
+    <li>Measured steady voltage, current and output speed.</li>
+    <li>Experimental first-order gain K and time constant τ.</li>
+    <li>Calculated K<sub>e</sub>, K<sub>t</sub>, D and J.</li>
+    <li>Your CSV step-response data and final parameter table.</li>
+  </ul>
+  <p class="muted">Practical 1 is not a separate marked report. These measurements and calculations feed directly into Assignment 1.</p>
+</section>
 
 <section class="card">
   <details><summary><b>Diagnostic console</b></summary><div style="margin-top:12px"><div class="row"><input id="cmd" style="flex:1" placeholder="e.g. STATUS"><button id="sendCmd" disabled>Send</button><button id="statusBtn" disabled>STATUS</button></div><pre id="console"></pre></div></details>
 </section>
 </main>
+
 <script>
 const $=id=>document.getElementById(id), enc=new TextEncoder(), dec=new TextDecoder();
-let port=null,reader=null,writer=null,reading=false,rx="",fwType="unknown",latest=null,lastCount=null;
-let p1Recording=false,p2Recording=false,p1Start=0,p2Start=0,p1Log=[],p2Log=[],p1Plot=[],p2Plot=[],points=[];
+let port=null,reader=null,writer=null,reading=false,rx="",latest=null,lastCount=null;
+let recording=false,startTime=0,logRows=[],plotRows=[],points=[];
+
 function delay(ms){return new Promise(r=>setTimeout(r,ms))}
 function log(s){const c=$("console");c.textContent+=s+"\n";if(c.textContent.length>35000)c.textContent=c.textContent.slice(-26000);c.scrollTop=c.scrollHeight}
-function updateRecordingButtons(){const on=!!port;$("p1RecStart").disabled=!on||p1Recording;$("p1RecStop").disabled=!on||!p1Recording;$("p2RecStart").disabled=!on||p2Recording;$("p2RecStop").disabled=!on||!p2Recording}
-function setConnected(on){$("dot").className="dot"+(on?" on":" ");$("connText").textContent=on?"Pico connected":"Not connected";$("connect").textContent=on?"Disconnect":"Connect Pico";["applyEncoder","p1Capture","applyPid","stopPid","sendCmd","statusBtn"].forEach(id=>$(id).disabled=!on);updateRecordingButtons();updateRunEnable()}
-function updateRunEnable(){const can=!!port&&(fwType==="combined"||fwType==="p2"||fwType==="legacyDual");$("runPid").disabled=!can;if(fwType==="combined"){ $("p2Capability").textContent="Combined Practical 1 + Practical 2 firmware detected";$("p2Capability").className="badge ok" } else if(fwType==="p2"){ $("p2Capability").textContent="Practical 2 firmware detected (also supports Practical 1 monitoring)";$("p2Capability").className="badge ok" } else if(fwType==="p1"){ $("p2Capability").textContent="Old Practical 1-only firmware detected — flash the combined UF2";$("p2Capability").className="badge bad" } else if(fwType==="legacyDual"){ $("p2Capability").textContent="Legacy dual-PID firmware detected";$("p2Capability").className="badge" } else { $("p2Capability").textContent="Combined firmware not detected";$("p2Capability").className="badge" }}
+function ratio(){const n=parseFloat($("gearRatio").value);return Number.isFinite(n)&&n>0?n:1}
+function setConnected(on){$("dot").className="dot"+(on?" on":"");$("connText").textContent=on?"Pico connected":"Not connected";$("connect").textContent=on?"Disconnect":"Connect Pico";["applyEncoder","recStart","recStop","capture","sendCmd","statusBtn"].forEach(id=>$(id).disabled=!on)}
 async function send(s){if(!writer){log("Not connected: "+s);return false}try{await writer.write(enc.encode(s+"\r\n"));log("> "+s);return true}catch(e){log("Send error: "+e.message);return false}}
 async function seq(arr,gap=80){for(const s of arr){if(!(await send(s)))return false;await delay(gap)}return true}
-async function connect(){if(port){await disconnect();return}if(!("serial" in navigator)){alert("Web Serial is not available. Use the current desktop version of Chrome or Edge.");return}try{port=await navigator.serial.requestPort();await port.open({baudRate:115200});writer=port.writable.getWriter();reading=true;setConnected(true);readLoop();await delay(200);await seq(["HELLO","STOP","STREAM,ON","STATUS"]);await delay(100);await applyEncoder()}catch(e){log("Connection error: "+e.message);try{if(port)await port.close()}catch(_){}port=null;setConnected(false)}}
-async function disconnect(){reading=false;p1Recording=false;p2Recording=false;try{if(reader){await reader.cancel();reader.releaseLock()}}catch(_){}reader=null;try{if(writer)writer.releaseLock()}catch(_){}writer=null;try{if(port)await port.close()}catch(_){}port=null;fwType="unknown";latest=null;$("fw").textContent="Firmware: not detected";setConnected(false)}
-async function readLoop(){while(port&&reading){try{reader=port.readable.getReader();while(reading){const {value,done}=await reader.read();if(done)break;rx+=dec.decode(value,{stream:true}).replace(/\0/g,"");let i;while((i=rx.indexOf("\n"))>=0){const line=rx.slice(0,i).replace(/\r/g,"").trim();rx=rx.slice(i+1);if(line)handleLine(line)}}}catch(e){if(reading)log("Read error: "+e.message)}finally{try{if(reader)reader.releaseLock()}catch(_){}reader=null}}}
-function handleLine(line){if(!line.startsWith("DATA2,"))log(line);if(line.startsWith("INFO,EE3600_P1_P2_COMBINED")){fwType="combined";$("fw").textContent="Firmware: "+line;updateRunEnable()}else if(line.startsWith("INFO,EE3600_PRAC1_ENCODER")){fwType="p1";$("fw").textContent="Firmware: "+line;updateRunEnable()}else if(line.startsWith("INFO,EE3600_PRAC2_SPEED_PID")){fwType="p2";$("fw").textContent="Firmware: "+line;updateRunEnable()}else if(line.startsWith("INFO,EE3600_MOTOR_DUAL_PID")){fwType="legacyDual";$("fw").textContent="Firmware: "+line;updateRunEnable()}
- if(!line.startsWith("DATA2,"))return;const f=line.split(",");if(f.length<15)return;const r={ms:+f[1],mode:f[2],targetDeg:+f[3],targetRpm:+f[4],pos:+f[5],rpm:+f[6],pwm:+f[7],speedKp:+f[11],speedKi:+f[12],speedKd:+f[13],count:+f[14]};if(![r.ms,r.targetRpm,r.rpm,r.pwm,r.count].every(Number.isFinite))return;latest=r;updateLive(r);const now=performance.now();if(p1Recording){p1Log.push({...r,pc:(now-p1Start)/1000});p1Plot.push({...r});if(p1Plot.length>900)p1Plot.shift();$("p1Samples").textContent=p1Log.length}if(p2Recording){p2Log.push({...r,pc:(now-p2Start)/1000});p2Plot.push({...r});if(p2Plot.length>900)p2Plot.shift()}}
-function updateLive(r){$("p1Rpm").textContent=r.rpm.toFixed(1)+" rpm";$("p1Count").textContent=String(r.count);let d="Stopped";if(Math.abs(r.rpm)>=0.5)d=r.rpm>0?"Forward":"Reverse";$("p1Dir").textContent=d;$("p2TargetLive").textContent=r.targetRpm.toFixed(1)+" rpm";$("p2Rpm").textContent=r.rpm.toFixed(1)+" rpm";$("p2Error").textContent=(r.targetRpm-r.rpm).toFixed(1)+" rpm";$("p2Pwm").textContent=r.pwm.toFixed(1)+"%";if(lastCount!==null&&r.count!==lastCount){$("encBadge").textContent="Encoder pulses detected";$("encBadge").className="badge ok"}lastCount=r.count}
-async function applyEncoder(){const c=Math.max(1,Math.round(+("0"+$("cpr").value)||937)),s=+$("encSign").value;await seq(["CPR,"+c,"ENCSIGN,"+s,"STATUS"])}
-function startP1(){if(!port||p1Recording)return;p1Log=[];p1Plot=[];p1Start=performance.now();p1Recording=true;$("p1Samples").textContent="0";$("p1RecState").textContent="Recording...";$("p1Download").disabled=true;updateRecordingButtons()}
-function stopP1(){if(!p1Recording)return;p1Recording=false;$("p1RecState").textContent="Stopped — "+p1Log.length+" samples (plot frozen)";$("p1Download").disabled=!p1Log.length;updateRecordingButtons()}
-function capturePoint(){if(!latest)return;const v=+$("p1Voltage").value,i=+$("p1Current").value;if(!Number.isFinite(v)||!Number.isFinite(i)){alert("Enter valid voltage and current values.");return}points.push({n:points.length+1,v,i,p:v*i,rpm:latest.rpm,count:latest.count});renderPoints();$("p1PointsCsv").disabled=false}
-function renderPoints(){const tb=$("pointsBody");if(!points.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:#777">No points captured</td></tr>';return}tb.innerHTML=points.map(x=>`<tr><td>${x.n}</td><td>${x.v.toFixed(2)}</td><td>${x.i.toFixed(3)}</td><td>${x.p.toFixed(3)}</td><td>${x.rpm.toFixed(1)}</td><td>${x.count}</td></tr>`).join("")}
-function saveCsv(name,header,rows){const blob=new Blob([header+"\n"+rows.join("\n")+"\n"],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-function downloadP1(){saveCsv("EE3600_Practical1_speed.csv","pc_time_s,pico_time_ms,rpm,encoder_count",p1Log.map(r=>[r.pc.toFixed(4),r.ms,r.rpm.toFixed(3),r.count].join(",")))}
-function downloadPoints(){saveCsv("EE3600_Practical1_steady_state_points.csv","point,voltage_V,current_A,electrical_power_W,rpm,encoder_count",points.map(x=>[x.n,x.v.toFixed(3),x.i.toFixed(4),x.p.toFixed(4),x.rpm.toFixed(3),x.count].join(",")))}
-async function applyPid(){const kp=Math.max(0,+$("kp").value||0),ki=Math.max(0,+$("ki").value||0),kd=Math.max(0,+$("kd").value||0);await send("PIDSPEED,"+[kp,ki,kd].join(","))}
-async function runPid(){if(!(fwType==="combined"||fwType==="p2"||fwType==="legacyDual")){alert("Flash the combined Practical 1 + Practical 2 UF2 first.");return}const t=Math.max(-300,Math.min(300,+$("targetRpm").value||0)),lim=Math.max(5,Math.min(100,+$("pwmLimit").value||30)),kp=Math.max(0,+$("kp").value||0),ki=Math.max(0,+$("ki").value||0),kd=Math.max(0,+$("kd").value||0);await seq(["LIMIT,"+lim,"PIDSPEED,"+[kp,ki,kd].join(","),"SPEED,"+t,"MODE,SPEED"])}
-function startP2(){if(!port||p2Recording)return;p2Log=[];p2Plot=[];p2Start=performance.now();p2Recording=true;$("p2RecState").textContent="Recording...";$("p2Download").disabled=true;updateRecordingButtons()}
-function stopP2(){if(!p2Recording)return;p2Recording=false;$("p2RecState").textContent="Stopped — "+p2Log.length+" samples (plot frozen)";$("p2Download").disabled=!p2Log.length;updateRecordingButtons()}
-function downloadP2(){saveCsv("EE3600_Practical2_PID_speed.csv","pc_time_s,pico_time_ms,target_rpm,measured_rpm,error_rpm,pwm_percent,kp,ki,kd,encoder_count",p2Log.map(r=>[r.pc.toFixed(4),r.ms,r.targetRpm.toFixed(3),r.rpm.toFixed(3),(r.targetRpm-r.rpm).toFixed(3),r.pwm.toFixed(3),r.speedKp.toFixed(5),r.speedKi.toFixed(5),r.speedKd.toFixed(5),r.count].join(",")))}
-function draw(canvas,data,series,fixedY=null){const cv=$(canvas),ctx=cv.getContext("2d"),d=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;if(cv.width!==Math.round(W*d)||cv.height!==Math.round(H*d)){cv.width=Math.round(W*d);cv.height=Math.round(H*d)}ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,W,H);const L=55,R=12,T=12,B=29,w=Math.max(20,W-L-R),h=Math.max(20,H-T-B);ctx.strokeStyle="#dfe3e8";ctx.strokeRect(L,T,w,h);if(data.length<2)return;const t0=data[0].ms,t1=data[data.length-1].ms,ts=Math.max(100,t1-t0);let vals=[];series.forEach(s=>data.forEach(r=>vals.push(r[s.k])));let lo=fixedY?fixedY[0]:Math.min(...vals),hi=fixedY?fixedY[1]:Math.max(...vals);if(!fixedY){if(hi-lo<10){lo-=5;hi+=5}const p=(hi-lo)*.1;lo-=p;hi+=p}const X=t=>L+(t-t0)/ts*w,Y=y=>T+(hi-y)/(hi-lo)*h;for(let i=0;i<=4;i++){const y=T+h*i/4,v=hi-(hi-lo)*i/4;ctx.strokeStyle="#eef0f2";ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(L+w,y);ctx.stroke();ctx.fillStyle="#666";ctx.font='11px "Century Gothic", Arial';ctx.textAlign="right";ctx.fillText(v.toFixed(0),L-6,y+4)}const cols=["#0b57d0","#d93025","#188038"];series.forEach((s,j)=>{ctx.strokeStyle=cols[j%cols.length];ctx.lineWidth=2;ctx.beginPath();data.forEach((r,i)=>{const x=X(r.ms),y=Y(r[s.k]);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()});ctx.fillStyle="#666";ctx.textAlign="center";ctx.fillText(((t1-t0)/1000).toFixed(1)+" s",L+w/2,H-7)}
-function animate(){draw("p1Chart",p1Plot,[{k:"rpm"}]);draw("p2Chart",p2Plot,[{k:"targetRpm"},{k:"rpm"}]);draw("p2PwmChart",p2Plot,[{k:"pwm"}],[-100,100]);requestAnimationFrame(animate)}requestAnimationFrame(animate);
-document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("page-"+b.dataset.page).classList.add("active");if(port){await send("STOP");if(b.dataset.page==="p1")log("Practical 1 selected: Pico motor outputs forced OFF; bench supply drives the motor.")}});
-$("connect").onclick=connect;$("applyEncoder").onclick=applyEncoder;$("p1RecStart").onclick=startP1;$("p1RecStop").onclick=stopP1;$("p1Clear").onclick=()=>{p1Log=[];p1Plot=[];$("p1Samples").textContent="0";$("p1Download").disabled=true;$("p1RecState").textContent="Not recording"};$("p1Download").onclick=downloadP1;$("p1Capture").onclick=capturePoint;$("p1PointsCsv").onclick=downloadPoints;$("applyPid").onclick=applyPid;$("runPid").onclick=runPid;$("stopPid").onclick=()=>send("STOP");$("p2RecStart").onclick=startP2;$("p2RecStop").onclick=stopP2;$("p2Clear").onclick=()=>{p2Log=[];p2Plot=[];$("p2Download").disabled=true;$("p2RecState").textContent="Not recording"};$("p2Download").onclick=downloadP2;$("sendCmd").onclick=()=>{const s=$("cmd").value.trim();if(s)send(s);$("cmd").value=""};$("cmd").addEventListener("keydown",e=>{if(e.key==="Enter")$("sendCmd").click()});$("statusBtn").onclick=()=>send("STATUS");
+async function connect(){
+  if(port){await disconnect();return}
+  if(!("serial" in navigator)){alert("Web Serial is not available. Use current desktop Chrome or Edge.");return}
+  try{
+    port=await navigator.serial.requestPort();
+    await port.open({baudRate:115200});
+    writer=port.writable.getWriter();reading=true;setConnected(true);readLoop();
+    await delay(200);await seq(["HELLO","STREAM,ON","STATUS"]);await delay(100);await applyEncoder();
+  }catch(e){log("Connection error: "+e.message);try{if(port)await port.close()}catch(_){}port=null;setConnected(false)}
+}
+async function disconnect(){
+  reading=false;recording=false;
+  try{if(reader){await reader.cancel();reader.releaseLock()}}catch(_){}reader=null;
+  try{if(writer)writer.releaseLock()}catch(_){}writer=null;
+  try{if(port)await port.close()}catch(_){}port=null;latest=null;$("fw").textContent="Firmware: not detected";setConnected(false)
+}
+async function readLoop(){
+  while(port&&reading){
+    try{
+      reader=port.readable.getReader();
+      while(reading){
+        const {value,done}=await reader.read();if(done)break;
+        rx+=dec.decode(value,{stream:true}).replace(/\0/g,"");
+        let i;while((i=rx.indexOf("\n"))>=0){const line=rx.slice(0,i).replace(/\r/g,"").trim();rx=rx.slice(i+1);if(line)handleLine(line)}
+      }
+    }catch(e){if(reading)log("Read error: "+e.message)}
+    finally{try{if(reader)reader.releaseLock()}catch(_){}reader=null}
+  }
+}
+function handleLine(line){
+  if(!line.startsWith("DATA2,"))log(line);
+  if(line.startsWith("INFO,"))$("fw").textContent="Firmware: "+line;
+  if(!line.startsWith("DATA2,"))return;
+  const f=line.split(",");if(f.length<15)return;
+  const r={ms:+f[1],rpm:+f[6],count:+f[14]};
+  if(![r.ms,r.rpm,r.count].every(Number.isFinite))return;
+  latest=r;updateLive(r);
+  const now=performance.now();plotRows.push({...r});if(plotRows.length>1200)plotRows.shift();
+  if(recording){logRows.push({...r,pc:(now-startTime)/1000});$("samples").textContent=logRows.length}
+}
+function updateLive(r){
+  $("outRpm").textContent=r.rpm.toFixed(1)+" rpm";
+  $("motorRpm").textContent=(r.rpm*ratio()).toFixed(0)+" rpm";
+  $("encCount").textContent=String(r.count);
+  if(lastCount!==null&&r.count!==lastCount){$("encBadge").textContent="Encoder pulses detected";$("encBadge").className="badge ok"}
+  lastCount=r.count;
+}
+async function applyEncoder(){
+  const c=Math.max(1,Math.round(parseFloat($("cpr").value)||937)),s=+$("encSign").value;
+  await seq(["CPR,"+c,"ENCSIGN,"+s,"STATUS"])
+}
+function startRec(){logRows=[];startTime=performance.now();recording=true;$("samples").textContent="0";$("recState").textContent="Recording...";$("download").disabled=true}
+function stopRec(){recording=false;$("recState").textContent="Stopped — "+logRows.length+" samples";$("download").disabled=!logRows.length}
+function capturePoint(){
+  if(!latest)return;
+  const v=parseFloat($("voltage").value),i=parseFloat($("current").value);
+  if(!Number.isFinite(v)||!Number.isFinite(i)){alert("Enter the measured motor terminal voltage and steady current first.");return}
+  points.push({n:points.length+1,v,i,outRpm:latest.rpm,motorRpm:latest.rpm*ratio(),count:latest.count});
+  renderPoints();$("pointsCsv").disabled=false
+}
+function renderPoints(){
+  const tb=$("pointsBody");
+  if(!points.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:#777">No points captured</td></tr>';return}
+  tb.innerHTML=points.map(x=>`<tr><td>${x.n}</td><td>${x.v.toFixed(2)}</td><td>${x.i.toFixed(3)}</td><td>${x.outRpm.toFixed(1)}</td><td>${x.motorRpm.toFixed(0)}</td><td>${x.count}</td></tr>`).join("")
+}
+function saveCsv(name,header,rows){
+  const blob=new Blob([header+"\n"+rows.join("\n")+"\n"],{type:"text/csv"}),a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
+}
+function downloadRec(){saveCsv("EE3600_Practical1_speed.csv","pc_time_s,pico_time_ms,output_rpm,motor_rpm,gear_ratio,encoder_count",logRows.map(r=>[r.pc.toFixed(4),r.ms,r.rpm.toFixed(3),(r.rpm*ratio()).toFixed(3),ratio().toFixed(4),r.count].join(",")))}
+function downloadPoints(){saveCsv("EE3600_Practical1_steady_state_points.csv","point,voltage_V,current_A,output_rpm,motor_rpm,gear_ratio,encoder_count",points.map(x=>[x.n,x.v.toFixed(3),x.i.toFixed(4),x.outRpm.toFixed(3),x.motorRpm.toFixed(3),ratio().toFixed(4),x.count].join(",")))}
+function draw(){
+  const cv=$("chart"),ctx=cv.getContext("2d"),d=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;
+  if(cv.width!==Math.round(W*d)||cv.height!==Math.round(H*d)){cv.width=Math.round(W*d);cv.height=Math.round(H*d)}
+  ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,W,H);
+  const L=55,R=12,T=12,B=29,w=Math.max(20,W-L-R),h=Math.max(20,H-T-B);ctx.strokeStyle="#dfe3e8";ctx.strokeRect(L,T,w,h);
+  if(plotRows.length<2){requestAnimationFrame(draw);return}
+  const t0=plotRows[0].ms,t1=plotRows[plotRows.length-1].ms,ts=Math.max(100,t1-t0);
+  let lo=Math.min(...plotRows.map(r=>r.rpm)),hi=Math.max(...plotRows.map(r=>r.rpm));if(hi-lo<10){lo-=5;hi+=5}const p=(hi-lo)*.1;lo-=p;hi+=p;
+  const X=t=>L+(t-t0)/ts*w,Y=y=>T+(hi-y)/(hi-lo)*h;
+  for(let i=0;i<=4;i++){const y=T+h*i/4,v=hi-(hi-lo)*i/4;ctx.strokeStyle="#eef0f2";ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(L+w,y);ctx.stroke();ctx.fillStyle="#666";ctx.font="11px Arial";ctx.textAlign="right";ctx.fillText(v.toFixed(0),L-6,y+4)}
+  ctx.strokeStyle="#0b57d0";ctx.lineWidth=2;ctx.beginPath();plotRows.forEach((r,i)=>{const x=X(r.ms),y=Y(r.rpm);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();
+  ctx.fillStyle="#666";ctx.textAlign="center";ctx.fillText(((t1-t0)/1000).toFixed(1)+" s",L+w/2,H-7);requestAnimationFrame(draw)
+}
+requestAnimationFrame(draw);
+
+$("connect").onclick=connect;
+$("applyEncoder").onclick=applyEncoder;
+$("gearRatio").addEventListener("input",()=>{if(latest)updateLive(latest)});
+$("recStart").onclick=startRec;$("recStop").onclick=stopRec;
+$("clear").onclick=()=>{logRows=[];plotRows=[];$("samples").textContent="0";$("download").disabled=true;$("recState").textContent="Not recording"};
+$("download").onclick=downloadRec;$("capture").onclick=capturePoint;$("pointsCsv").onclick=downloadPoints;
+$("sendCmd").onclick=()=>{const s=$("cmd").value.trim();if(s)send(s);$("cmd").value=""};
+$("cmd").addEventListener("keydown",e=>{if(e.key==="Enter")$("sendCmd").click()});
+$("statusBtn").onclick=()=>send("STATUS");
 setConnected(false);
 </script>
-</body></html>
+</body>
+</html>

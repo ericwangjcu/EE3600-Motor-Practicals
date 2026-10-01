@@ -28,6 +28,7 @@
   <h2>Why this practical matters for Assignment 1</h2>
   <p>From the measured speed step response you will first identify an experimental first-order transfer function. You will then determine the physical parameters <b>R, K<sub>e</sub>, K<sub>t</sub>, D and J</b>. The first-order model is useful for checking the measured response, but Assignment 1 needs the physical parameters because additional gearbox, wheel, vehicle inertia, damping and load terms must be reflected back to the motor.</p>
   <div class="note safe"><b>Keep your final parameter table and CSV files.</b> You will use these values directly in Assignment 1.</div>
+  <p><b>MATLAB/Simulink is not required for Practical 1.</b> Use this webpage and your measurements to obtain the parameters. MATLAB/Simulink is used later in Assignment 1 to build the complete motor/drivetrain model.</p>
 </section>
 
 <section class="card">
@@ -40,6 +41,8 @@
     <label>Encoder CPR used by this platform<input id="cpr" type="number" min="1" step="1" value="937"></label>
   </div>
   <p class="muted">If you cannot confirm the motor rated voltage, rated output speed or gearbox ratio, stop and ask the tutor before running the motor. The value 21.6 is the ratio used by the demonstrated platform only.</p>
+  <div class="note"><b>Steady-state tests:</b> after confirming the rated voltage, take three operating points at approximately <b>70%, 80% and 90%</b> of the rated voltage (or the values specified by the tutor). Record the <b>actual measured motor-terminal voltage</b> at each point.</div>
+  <p id="targetVoltages" class="muted">Enter the motor rated voltage above to see the suggested 70%, 80% and 90% test voltages.</p>
 </section>
 
 <section class="card">
@@ -100,30 +103,32 @@
     <li>With the motor stopped, start recording.</li>
     <li>Apply the selected safe motor voltage as a step input.</li>
     <li>Allow the motor to reach a steady speed, then stop recording.</li>
-    <li>Repeat the test at least three times using the same applied voltage.</li>
-    <li>Use the recorded response to determine the steady output speed and the time constant.</li>
+    <li>Repeat the same step-response test <b>three times</b> using the same applied voltage.</li>
+    <li>For each run, determine the steady output speed and the time constant: τ<sub>1</sub>, τ<sub>2</sub>, τ<sub>3</sub>.</li>
+    <li>Use the average time constant <b>τ̄ = (τ<sub>1</sub> + τ<sub>2</sub> + τ<sub>3</sub>)/3</b> for the physical parameter calculation.</li>
   </ol>
   <div class="eq">ω<sub>out</sub>(τ) = 0.632 ω<sub>out,ss</sub></div>
   <div class="note"><b>Important:</b> the time constant τ is measured directly from the output-speed response. <b>Do not multiply τ by the gearbox ratio.</b> A constant gear ratio changes the speed magnitude but does not change the time constant.</div>
-  <p>For the experimental voltage-to-output-speed model, convert steady output speed to rad/s and use:</p>
-  <div class="eq">K = ω<sub>out,ss</sub> / V &nbsp;&nbsp;&nbsp;&nbsp; G<sub>exp</sub>(s) = K / (τs + 1)</div>
+  <p>For each run, convert the steady output speed to rad/s and calculate the steady-state gain. Use the average gain and average time constant for the experimental first-order model:</p>
+  <div class="eq">K<sub>i</sub> = ω<sub>out,ss,i</sub> / V<sub>i</sub> &nbsp;&nbsp;&nbsp;&nbsp; K̄ = (K<sub>1</sub>+K<sub>2</sub>+K<sub>3</sub>)/3</div>
+  <div class="eq">G<sub>exp</sub>(s) = K̄ / (τ̄s + 1)</div>
 </section>
 
 <section class="card twocol">
   <div>
     <h2>Continuous speed recording</h2>
-    <p>Record the complete speed response for the step test.</p>
+    <p>Record the complete speed response for each of the three identical step tests. Download and keep the CSV from each run.</p>
     <div class="row"><button id="recStart" class="green" disabled>Start recording</button><button id="recStop" disabled>Stop recording</button><button id="clear">Clear</button><button id="download" disabled>Download CSV</button></div>
     <p id="recState" class="muted">Not recording</p>
   </div>
   <div>
-    <h2>Capture a steady-state point</h2>
+    <h2>Capture three steady-state points</h2>
     <div class="formgrid">
       <label>Actual motor terminal voltage V (V)<input id="voltage" type="number" step="0.01" placeholder="Measured value"></label>
       <label>Steady motor current I (A)<input id="current" type="number" step="0.001" placeholder="Measured value"></label>
     </div>
     <div class="row" style="margin-top:11px"><button id="capture" disabled>Capture current RPM</button><button id="pointsCsv" disabled>Download points CSV</button></div>
-    <p class="muted">Voltage and current are entered from the bench supply/meter. RPM is captured from the Pico at that instant.</p>
+    <p class="muted">Capture three different steady operating points at about 70%, 80% and 90% of the confirmed rated voltage. Enter the actual measured terminal voltage and steady current; RPM is captured from the Pico.</p>
   </div>
 </section>
 
@@ -136,15 +141,22 @@
 
 <section class="card">
   <h2>Part 2 — Physical parameters for Assignment 1</h2>
-  <p>The HTML speed is gearbox-output speed. For the physical motor equations, convert it to the real motor-shaft speed using the confirmed gearbox ratio:</p>
-  <div class="eq">n<sub>m</sub> = N n<sub>out</sub> &nbsp;&nbsp;&nbsp;&nbsp; ω<sub>m</sub> = 2πn<sub>m</sub>/60</div>
-  <p>Measure the winding resistance <b>R</b> with power removed. At a steady operating point, use the measured terminal voltage, current and motor-shaft speed to estimate:</p>
-  <div class="eq">K<sub>e</sub> = (V − RI) / ω<sub>m</sub></div>
-  <div class="eq">K<sub>t</sub> ≈ K<sub>e</sub> &nbsp; (SI units)</div>
-  <p>Using the steady no-load current, estimate the equivalent damping referred to the motor shaft:</p>
-  <div class="eq">D = K<sub>t</sub>I<sub>ss</sub> / ω<sub>m,ss</sub></div>
-  <p>Then use the measured first-order time constant to determine the equivalent inertia of the motor + built-in gearbox referred to the motor shaft:</p>
-  <div class="eq">J = τ ( D + K<sub>t</sub>K<sub>e</sub>/R )</div>
+  <h3>2A. Winding resistance</h3>
+  <p>With power removed, measure the winding resistance at <b>five different rotor positions</b> and use the average value R̄. This reduces variation caused by the brushes and commutator.</p>
+  <h3>2B. Three steady-state operating points</h3>
+  <p>Use the three steady-state measurements at approximately 70%, 80% and 90% of rated voltage. The HTML speed is gearbox-output speed. For each point, convert it to the real motor-shaft speed using the confirmed gearbox ratio:</p>
+  <div class="eq">n<sub>m,i</sub> = N n<sub>out,i</sub> &nbsp;&nbsp;&nbsp;&nbsp; ω<sub>m,i</sub> = 2πn<sub>m,i</sub>/60</div>
+  <p>For each operating point calculate:</p>
+  <div class="eq">K<sub>e,i</sub> = (V<sub>i</sub> − R̄I<sub>i</sub>) / ω<sub>m,i</sub></div>
+  <p>Then average the three values:</p>
+  <div class="eq">K̄<sub>e</sub> = (K<sub>e,1</sub> + K<sub>e,2</sub> + K<sub>e,3</sub>)/3</div>
+  <div class="eq">K<sub>t</sub> ≈ K̄<sub>e</sub> &nbsp; (SI units)</div>
+  <p>Using this K<sub>t</sub>, calculate an effective damping value at each of the same three operating points:</p>
+  <div class="eq">D<sub>i</sub> = K<sub>t</sub>I<sub>i</sub> / ω<sub>m,i</sub></div>
+  <div class="eq">D̄ = (D<sub>1</sub> + D<sub>2</sub> + D<sub>3</sub>)/3</div>
+  <h3>2C. Equivalent inertia</h3>
+  <p>Use the <b>average time constant from the three step-response tests</b> together with the averaged physical parameters:</p>
+  <div class="eq">J = τ̄ ( D̄ + K<sub>t</sub>K̄<sub>e</sub>/R̄ )</div>
   <div class="note safe"><b>This is why Practical 1 does more than fit K and τ.</b> Assignment 1 needs R, K<sub>e</sub>, K<sub>t</sub>, D and J so that the additional drivetrain inertia, damping and loads can be reflected back to the motor correctly.</div>
 </section>
 
@@ -153,7 +165,7 @@
   <p>If the supplied disc is used, calculate its output-shaft inertia and reflect it to the motor shaft:</p>
   <div class="eq">J<sub>disc,out</sub> = ½mr² &nbsp;&nbsp;&nbsp;&nbsp; J<sub>disc,m</sub> = J<sub>disc,out</sub>/N²</div>
   <p>Predict the new time constant before repeating the test:</p>
-  <div class="eq">τ<sub>new</sub> = (J + J<sub>disc,m</sub>) / ( D + K<sub>t</sub>K<sub>e</sub>/R )</div>
+  <div class="eq">τ<sub>new</sub> = (J + J<sub>disc,m</sub>) / ( D̄ + K<sub>t</sub>K̄<sub>e</sub>/R̄ )</div>
   <p>Compare the prediction with the measured response. The added inertia should mainly slow the transient response; it should not be treated as a known steady load torque.</p>
 </section>
 
@@ -161,10 +173,10 @@
   <h2>What to keep for Assignment 1</h2>
   <ul class="checklist">
     <li>Confirmed motor rated voltage, rated output speed and gearbox ratio N.</li>
-    <li>Measured resistance R.</li>
-    <li>Measured steady voltage, current and output speed.</li>
-    <li>Experimental first-order gain K and time constant τ.</li>
-    <li>Calculated K<sub>e</sub>, K<sub>t</sub>, D and J.</li>
+    <li>Five resistance readings and average R̄.</li>
+    <li>Three steady-state voltage, current and output-speed measurements.</li>
+    <li>Three step-response CSV files, K<sub>1</sub>–K<sub>3</sub>, τ<sub>1</sub>–τ<sub>3</sub>, and averages K̄ and τ̄.</li>
+    <li>K<sub>e,1</sub>–K<sub>e,3</sub>, average K̄<sub>e</sub>, K<sub>t</sub>, D<sub>1</sub>–D<sub>3</sub>, average D̄ and final J.</li>
     <li>Your CSV step-response data and final parameter table.</li>
   </ul>
   <p class="muted">Practical 1 is not a separate marked report. These measurements and calculations feed directly into Assignment 1.</p>
@@ -274,7 +286,15 @@ requestAnimationFrame(draw);
 
 $("connect").onclick=connect;
 $("applyEncoder").onclick=applyEncoder;
+function updateTargets(){
+  const v=parseFloat($("ratedVoltage").value);
+  $("targetVoltages").textContent=Number.isFinite(v)&&v>0
+    ? "Suggested steady-state targets: 70% ≈ "+(0.70*v).toFixed(2)+" V, 80% ≈ "+(0.80*v).toFixed(2)+" V, 90% ≈ "+(0.90*v).toFixed(2)+" V. Record the actual measured terminal voltage at each point."
+    : "Enter the motor rated voltage above to see the suggested 70%, 80% and 90% test voltages.";
+}
 $("gearRatio").addEventListener("input",()=>{if(latest)updateLive(latest)});
+$("ratedVoltage").addEventListener("input",updateTargets);
+updateTargets();
 $("recStart").onclick=startRec;$("recStop").onclick=stopRec;
 $("clear").onclick=()=>{logRows=[];plotRows=[];$("samples").textContent="0";$("download").disabled=true;$("recState").textContent="Not recording"};
 $("download").onclick=downloadRec;$("capture").onclick=capturePoint;$("pointsCsv").onclick=downloadPoints;

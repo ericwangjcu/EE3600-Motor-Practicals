@@ -28,7 +28,7 @@
   <h2>Why this practical matters for Assignment 1</h2>
   <p>From the measured speed step response you will first identify an experimental first-order transfer function. You will then determine the physical parameters <b>R, K<sub>e</sub>, K<sub>t</sub>, D and J</b>. The first-order model is useful for checking the measured response, but Assignment 1 needs the physical parameters because additional gearbox, wheel, vehicle inertia, damping and load terms must be reflected back to the motor.</p>
   <div class="note safe"><b>Keep your final parameter table and CSV files.</b> You will use these values directly in Assignment 1.</div>
-  <p><b>MATLAB/Simulink is not required for Practical 1.</b> Use this webpage and your measurements to obtain the parameters. MATLAB/Simulink is used later in Assignment 1 to build the complete motor/drivetrain model.</p>
+  <p><b>MATLAB is used in Practical 1 for a short validation exercise.</b> After identifying the motor parameters, you will compare the measured step response with both the experimental first-order model and the physical motor model. The full drivetrain and Simulink modelling are carried forward to Assignment 1.</p>
 </section>
 
 <section class="card">
@@ -76,6 +76,7 @@
 </section>
 
 <section class="card">
+  <h2>Encoder direction and sign</h2>
   <div class="top">
     <div class="row">
       <label>Encoder sign<select id="encSign"><option value="-1" selected>-1</option><option value="1">+1</option></select></label>
@@ -83,7 +84,15 @@
     </div>
     <span id="encBadge" class="badge">Waiting for encoder</span>
   </div>
-  <p class="muted" style="margin-bottom:0">The HTML speed display is the <b>gearbox-output speed</b>. The encoder is on the motor shaft, but the firmware CPR is calibrated so that the page reports output-shaft rpm.</p>
+  <p>The encoder sign only determines which rotation direction is reported as <b>positive speed</b>. It does not change the actual direction of the motor.</p>
+  <ol class="steps">
+    <li>Connect the motor in the normal test direction and run it at a low safe voltage.</li>
+    <li>Check the displayed gearbox-output speed.</li>
+    <li>If the speed is <b>positive</b>, leave the encoder sign as it is.</li>
+    <li>If the speed is <b>negative</b> while the motor is rotating in the intended forward direction, change the encoder sign from −1 to +1, or from +1 to −1, then click <b>Apply encoder settings</b>.</li>
+  </ol>
+  <div class="note"><b>Use a positive speed for the Practical 1 calculations.</b> Change the encoder sign to correct the measurement sign rather than reversing the motor wiring just to make the displayed speed positive.</div>
+  <p class="muted" style="margin-bottom:0">The Practical 1 webpage displays <b>gearbox-output speed</b>. The encoder is mounted on the motor shaft, but the firmware CPR is calibrated so that the webpage reports output-shaft rpm.</p>
 </section>
 
 <section class="card">
@@ -144,7 +153,7 @@
   <h3>2A. Winding resistance</h3>
   <p>With power removed, measure the winding resistance at <b>five different rotor positions</b> and use the average value R̄. This reduces variation caused by the brushes and commutator.</p>
   <h3>2B. Three steady-state operating points</h3>
-  <p>Use the three steady-state measurements at approximately 70%, 80% and 90% of rated voltage. The HTML speed is gearbox-output speed. For each point, convert it to the real motor-shaft speed using the confirmed gearbox ratio:</p>
+  <p>Use the three steady-state measurements at approximately 70%, 80% and 90% of rated voltage. The Practical 1 webpage displays gearbox-output speed. For each point, convert it to the real motor-shaft speed using the confirmed gearbox ratio:</p>
   <div class="eq">n<sub>m,i</sub> = N n<sub>out,i</sub> &nbsp;&nbsp;&nbsp;&nbsp; ω<sub>m,i</sub> = 2πn<sub>m,i</sub>/60</div>
   <p>For each operating point calculate:</p>
   <div class="eq">K<sub>e,i</sub> = (V<sub>i</sub> − R̄I<sub>i</sub>) / ω<sub>m,i</sub></div>
@@ -161,7 +170,31 @@
 </section>
 
 <section class="card">
-  <h2>Part 3 — Optional added-inertia validation</h2>
+  <h2>Part 3 — MATLAB validation</h2>
+  <p>Use MATLAB to compare the measured Practical 1 response with the two transfer-function models you have identified. <b>Simulink is not required for this practical.</b></p>
+  <ol class="steps">
+    <li>Import one of your step-response CSV files. Set <b>t = 0</b> at the start of the voltage step/speed rise.</li>
+    <li>Convert the measured gearbox-output speed to rad/s, or convert the simulated responses to rpm before plotting. Keep the units consistent.</li>
+    <li>Create the experimental first-order model using K̄ and τ̄.</li>
+    <li>Create the physical motor + built-in gearbox model using R̄, K̄<sub>e</sub>, K<sub>t</sub>, D̄, J and N.</li>
+    <li>Use the actual measured step voltage from the selected run and simulate both models.</li>
+    <li>Plot the measured response, experimental first-order model and physical model on the same graph.</li>
+    <li>Briefly comment on how closely the two models match the real motor response.</li>
+  </ol>
+  <div class="eq">G<sub>exp</sub>(s) = K̄ / (τ̄s + 1)</div>
+  <div class="eq">G<sub>phys</sub>(s) = (K<sub>t</sub>/N) / [R̄Js + (R̄D̄ + K<sub>t</sub>K̄<sub>e</sub>)]</div>
+  <pre style="height:auto;background:#f8f9fa;color:#202124;border:1px solid #e0e3e7">G_exp  = tf(Kbar, [taubar 1]);
+G_phys = tf(Kt/N, [Rbar*J, Rbar*Dbar + Kt*Kebar]);
+
+u = Vstep*ones(size(t));
+y_exp  = lsim(G_exp,  u, t);
+y_phys = lsim(G_phys, u, t);</pre>
+  <p class="muted">The transfer functions above give output speed in rad/s. Convert to rpm with rpm = ω × 60/(2π) if you want to compare directly with the webpage CSV.</p>
+  <div class="note safe"><b>Link to Assignment 1:</b> Practical 1 validates the real motor model. In Assignment 1 you will take the physical parameters into the full drivetrain model, reflect the additional inertia/damping back to the motor and use MATLAB/Simulink for the vehicle/control-system analysis.</div>
+</section>
+
+<section class="card">
+  <h2>Part 4 — Optional added-inertia validation</h2>
   <p>If the supplied disc is used, calculate its output-shaft inertia and reflect it to the motor shaft:</p>
   <div class="eq">J<sub>disc,out</sub> = ½mr² &nbsp;&nbsp;&nbsp;&nbsp; J<sub>disc,m</sub> = J<sub>disc,out</sub>/N²</div>
   <p>Predict the new time constant before repeating the test:</p>
@@ -177,6 +210,7 @@
     <li>Three steady-state voltage, current and output-speed measurements.</li>
     <li>Three step-response CSV files, K<sub>1</sub>–K<sub>3</sub>, τ<sub>1</sub>–τ<sub>3</sub>, and averages K̄ and τ̄.</li>
     <li>K<sub>e,1</sub>–K<sub>e,3</sub>, average K̄<sub>e</sub>, K<sub>t</sub>, D<sub>1</sub>–D<sub>3</sub>, average D̄ and final J.</li>
+    <li>The MATLAB comparison plot showing measured response, experimental first-order model and physical model.</li>
     <li>Your CSV step-response data and final parameter table.</li>
   </ul>
   <p class="muted">Practical 1 is not a separate marked report. These measurements and calculations feed directly into Assignment 1.</p>

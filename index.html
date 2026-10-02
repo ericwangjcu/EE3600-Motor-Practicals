@@ -139,23 +139,23 @@
     <li>If the speed is <b>negative</b> while the motor is rotating in the intended forward direction, change the encoder sign from −1 to +1, or from +1 to −1, then click <b>Apply encoder settings</b>.</li>
   </ol>
   <div class="note"><b>Use a positive speed for the Practical 1 calculations.</b> Change the encoder sign to correct the measurement sign rather than reversing the motor wiring just to make the displayed speed positive.</div>
-  <p class="muted" style="margin-bottom:0">The encoder provides approximately <b>11 pulses per motor-shaft revolution per channel</b>. With x4 quadrature counting and the demonstrated 21.3:1 gearbox, the effective output-shaft count is approximately 11 × 4 × 21.3 = 937 counts/revolution. The Practical 1 firmware is therefore configured with an effective CPR of <b>937</b> so the webpage reports gearbox-output rpm.</p>
+  <p class="muted" style="margin-bottom:0">The encoder provides approximately <b>11 pulses per motor-shaft revolution per channel</b>. With x4 quadrature counting and the demonstrated 21.3:1 gearbox, the effective output-shaft count is approximately 11 × 4 × 21.3 = 937 counts/revolution. The encoder is mounted on the motor shaft. Use the <b>motor-shaft encoder CPR</b> (approximately 44 counts/rev with x4 quadrature on the demonstrated encoder). The gearbox ratio is entered separately, and the webpage calculates gearbox-output speed from the measured motor-shaft speed.</p>
   <details style="margin-top:10px">
     <summary><b>Advanced encoder setting</b></summary>
-    <p class="muted">Students normally do not need to change CPR. Only change this if the tutor confirms that your platform uses a different encoder/gearbox combination.</p>
-    <label style="max-width:260px">Effective encoder CPR<input id="cpr" type="number" min="1" step="1" value="937"></label>
+    <p class="muted">Students normally do not need to change CPR. Only change this if the tutor confirms that your platform uses a different encoder.</p>
+    <label style="max-width:260px">Motor-shaft encoder CPR<input id="cpr" type="number" min="1" step="1" value="44"></label>
   </details>
 </section>
 
 <section class="card">
   <h2>Live motor measurement</h2>
   <div class="grid">
-    <div class="metric"><span>Gearbox-output speed</span><strong id="outRpm">0.0 rpm</strong></div>
-    <div class="metric"><span>Calculated motor-shaft speed</span><strong id="motorRpm">0.0 rpm</strong></div>
+    <div class="metric"><span>Motor-shaft speed (encoder)</span><strong id="motorRpm">0.0 rpm</strong></div>
+    <div class="metric"><span>Calculated gearbox-output speed</span><strong id="outRpm">0.0 rpm</strong></div>
     <div class="metric"><span>Encoder count</span><strong id="encCount">0</strong></div>
     <div class="metric"><span>Recorded samples</span><strong id="samples">0</strong></div>
   </div>
-  <p class="muted">Motor-shaft speed shown above is calculated as <b>n<sub>m</sub> = N n<sub>out</sub></b> using the gearbox ratio entered above.</p>
+  <p class="muted">The encoder measures motor-shaft speed directly. Gearbox-output speed is calculated as <b>n<sub>out</sub> = n<sub>m</sub>/N</b> using the gearbox ratio entered above.</p>
 </section>
 
 <section class="card">
@@ -325,8 +325,8 @@ function handleLine(line){
   if(recording){logRows.push({...r,pc:(now-startTime)/1000});$("samples").textContent=logRows.length}
 }
 function updateLive(r){
-  $("outRpm").textContent=r.rpm.toFixed(1)+" rpm";
-  $("motorRpm").textContent=(r.rpm*ratio()).toFixed(0)+" rpm";
+  $("motorRpm").textContent=r.rpm.toFixed(0)+" rpm";
+  $("outRpm").textContent=(r.rpm/ratio()).toFixed(1)+" rpm";
   $("encCount").textContent=String(r.count);
   if(r.rpm < -1){
     $("encBadge").textContent="Negative speed — check encoder sign";
@@ -341,7 +341,7 @@ function updateLive(r){
   lastCount=r.count;
 }
 async function applyEncoder(){
-  const c=Math.max(1,Math.round(parseFloat($("cpr").value)||937)),s=+$("encSign").value;
+  const c=Math.max(1,Math.round(parseFloat($("cpr").value)||44)),s=+$("encSign").value;
   await seq(["CPR,"+c,"ENCSIGN,"+s,"STATUS"])
 }
 function startRec(){logRows=[];startTime=performance.now();recording=true;$("samples").textContent="0";$("recState").textContent="Recording...";$("download").disabled=true}
@@ -350,7 +350,7 @@ function capturePoint(){
   if(!latest)return;
   const v=parseFloat($("voltage").value),i=parseFloat($("current").value);
   if(!Number.isFinite(v)||!Number.isFinite(i)){alert("Enter the measured motor terminal voltage and steady current first.");return}
-  points.push({n:points.length+1,v,i,outRpm:latest.rpm,motorRpm:latest.rpm*ratio(),count:latest.count});
+  points.push({n:points.length+1,v,i,outRpm:latest.rpm/ratio(),motorRpm:latest.rpm,count:latest.count});
   renderPoints();$("pointsCsv").disabled=false
 }
 function renderPoints(){
@@ -362,7 +362,7 @@ function saveCsv(name,header,rows){
   const blob=new Blob([header+"\n"+rows.join("\n")+"\n"],{type:"text/csv"}),a=document.createElement("a");
   a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
 }
-function downloadRec(){saveCsv("EE3600_Practical1_speed.csv","pc_time_s,pico_time_ms,output_rpm,motor_rpm,gear_ratio,encoder_count",logRows.map(r=>[r.pc.toFixed(4),r.ms,r.rpm.toFixed(3),(r.rpm*ratio()).toFixed(3),ratio().toFixed(4),r.count].join(",")))}
+function downloadRec(){saveCsv("EE3600_Practical1_speed.csv","pc_time_s,pico_time_ms,output_rpm,motor_rpm,gear_ratio,encoder_count",logRows.map(r=>[r.pc.toFixed(4),r.ms,(r.rpm/ratio()).toFixed(3),r.rpm.toFixed(3),ratio().toFixed(4),r.count].join(",")))}
 function downloadPoints(){saveCsv("EE3600_Practical1_steady_state_points.csv","point,voltage_V,current_A,output_rpm,motor_rpm,gear_ratio,encoder_count",points.map(x=>[x.n,x.v.toFixed(3),x.i.toFixed(4),x.outRpm.toFixed(3),x.motorRpm.toFixed(3),ratio().toFixed(4),x.count].join(",")))}
 function draw(){
   const cv=$("chart"),ctx=cv.getContext("2d"),d=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;
@@ -371,10 +371,10 @@ function draw(){
   const L=55,R=12,T=12,B=29,w=Math.max(20,W-L-R),h=Math.max(20,H-T-B);ctx.strokeStyle="#dfe3e8";ctx.strokeRect(L,T,w,h);
   if(plotRows.length<2){requestAnimationFrame(draw);return}
   const t0=plotRows[0].ms,t1=plotRows[plotRows.length-1].ms,ts=Math.max(100,t1-t0);
-  let lo=Math.min(...plotRows.map(r=>r.rpm)),hi=Math.max(...plotRows.map(r=>r.rpm));if(hi-lo<10){lo-=5;hi+=5}const p=(hi-lo)*.1;lo-=p;hi+=p;
+  let lo=Math.min(...plotRows.map(r=>r.rpm/ratio())),hi=Math.max(...plotRows.map(r=>r.rpm/ratio()));if(hi-lo<10){lo-=5;hi+=5}const p=(hi-lo)*.1;lo-=p;hi+=p;
   const X=t=>L+(t-t0)/ts*w,Y=y=>T+(hi-y)/(hi-lo)*h;
   for(let i=0;i<=4;i++){const y=T+h*i/4,v=hi-(hi-lo)*i/4;ctx.strokeStyle="#eef0f2";ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(L+w,y);ctx.stroke();ctx.fillStyle="#666";ctx.font="11px Arial";ctx.textAlign="right";ctx.fillText(v.toFixed(0),L-6,y+4)}
-  ctx.strokeStyle="#0b57d0";ctx.lineWidth=2;ctx.beginPath();plotRows.forEach((r,i)=>{const x=X(r.ms),y=Y(r.rpm);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();
+  ctx.strokeStyle="#0b57d0";ctx.lineWidth=2;ctx.beginPath();plotRows.forEach((r,i)=>{const x=X(r.ms),y=Y(r.rpm/ratio());i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();
   ctx.fillStyle="#666";ctx.textAlign="center";ctx.fillText(((t1-t0)/1000).toFixed(1)+" s",L+w/2,H-7);requestAnimationFrame(draw)
 }
 requestAnimationFrame(draw);

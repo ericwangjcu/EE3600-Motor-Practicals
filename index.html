@@ -33,14 +33,61 @@
 
 <section class="card">
   <h2>Before you connect power — check your motor platform</h2>
-  <p>Different practical platforms may use different motors. Some motors are rated for approximately 6 V and some for approximately 12 V. The gearbox ratio and rated output speed may also differ. <b>Do not assume that every platform is identical.</b></p>
+  <p>Different practical platforms may use different motors. The manufacturer supplies 6 V, 12 V and 24 V versions with several gearbox ratios and output speeds. <b>Do not assume that every platform is identical.</b> Use the manufacturer table below, the motor label/specification, or ask the tutor before applying power.</p>
   <div class="formgrid">
     <label>Motor rated voltage (V)<input id="ratedVoltage" type="number" step="0.1" placeholder="Check label/specification"></label>
     <label>Rated gearbox-output speed (rpm)<input id="ratedSpeed" type="number" step="1" placeholder="Check label/specification"></label>
-    <label>Built-in gearbox ratio N = motor speed / output speed<input id="gearRatio" type="number" min="1" step="0.1" value="21.6"></label>
-    <label>Encoder CPR used by this platform<input id="cpr" type="number" min="1" step="1" value="937"></label>
+    <label>Built-in gearbox ratio N = motor speed / output speed<input id="gearRatio" type="number" min="1" step="0.1" value="21.3"></label>
+    <label>Motor version / notes<input id="motorNotes" type="text" placeholder="e.g. 6 V, 280 rpm"></label>
   </div>
-  <p class="muted">If you cannot confirm the motor rated voltage, rated output speed or gearbox ratio, stop and ask the tutor before running the motor. The value 21.6 is the ratio used by the demonstrated platform only.</p>
+  <p class="muted">If you cannot confirm the motor rated voltage, rated output speed or gearbox ratio, stop and ask the tutor before running the motor. For the demonstrated 6 V, 280 rpm platform, the manufacturer specifies <b>N = 21.3:1</b>.</p>
+
+  <details style="margin-top:14px">
+    <summary><b>Manufacturer motor/gearbox reference table</b></summary>
+    <p class="muted">Use this table only to identify your platform. For all calculations, use your <b>measured terminal voltage, current and speed</b>. The demonstrated platform is the 6 V, 21.3:1, 280 rpm version.</p>
+    <div style="overflow:auto">
+      <table>
+        <thead>
+          <tr><th>Reduction ratio</th><th>Rated V</th><th>No-load speed rpm</th><th>No-load current mA</th><th>Load torque kg·cm</th><th>Load speed rpm</th><th>Load current A</th><th>Stall torque kg·cm</th><th>Stall current A</th><th>Gearbox length mm</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>4.4</td><td>6</td><td>1360</td><td>100</td><td>0.1</td><td>1000</td><td>0.45</td><td>0.35</td><td>1.8</td><td>17</td></tr>
+          <tr><td>9.6</td><td>6</td><td>620</td><td>100</td><td>0.22</td><td>450</td><td>0.45</td><td>0.75</td><td>1.8</td><td>17</td></tr>
+          <tr style="font-weight:700;background:#e6f4ea"><td>21.3</td><td>6</td><td>280</td><td>100</td><td>0.5</td><td>220</td><td>0.45</td><td>1.7</td><td>1.8</td><td>19</td></tr>
+          <tr><td>35</td><td>6</td><td>170</td><td>100</td><td>0.8</td><td>130</td><td>0.45</td><td>2.8</td><td>1.8</td><td>21</td></tr>
+          <tr><td>46</td><td>6</td><td>130</td><td>100</td><td>1</td><td>100</td><td>0.45</td><td>3.6</td><td>1.8</td><td>21</td></tr>
+          <tr><td>78</td><td>6</td><td>77</td><td>100</td><td>1.8</td><td>60</td><td>0.45</td><td>6.2</td><td>1.8</td><td>23</td></tr>
+          <tr><td>103</td><td>6</td><td>60</td><td>100</td><td>2.4</td><td>46</td><td>0.45</td><td>8.2</td><td>1.8</td><td>23</td></tr>
+          <tr><td>171</td><td>6</td><td>35</td><td>100</td><td>4</td><td>27</td><td>0.45</td><td>9</td><td>1.8</td><td>25</td></tr>
+          <tr><td>226</td><td>6</td><td>26</td><td>100</td><td>5.2</td><td>20</td><td>0.45</td><td>9</td><td>1.8</td><td>25</td></tr>
+          <tr><td>377</td><td>6</td><td>16</td><td>100</td><td>8.4</td><td>12</td><td>0.45</td><td>9</td><td>1.8</td><td>27</td></tr>
+          <tr><td>500</td><td>6</td><td>12</td><td>100</td><td>9</td><td>9</td><td>0.45</td><td>9</td><td>1.8</td><td>27</td></tr>
+          <tr><td>4.4</td><td>12</td><td>1360</td><td>60</td><td>0.1</td><td>1000</td><td>0.45</td><td>0.35</td><td>1.3</td><td>17</td></tr>
+          <tr><td>9.6</td><td>12</td><td>620</td><td>60</td><td>0.22</td><td>450</td><td>0.45</td><td>0.75</td><td>1.3</td><td>17</td></tr>
+          <tr><td>21.3</td><td>12</td><td>280</td><td>60</td><td>0.5</td><td>220</td><td>0.45</td><td>1.7</td><td>1.3</td><td>19</td></tr>
+          <tr><td>35</td><td>12</td><td>170</td><td>60</td><td>0.8</td><td>130</td><td>0.45</td><td>2.8</td><td>1.3</td><td>21</td></tr>
+          <tr><td>46</td><td>12</td><td>130</td><td>60</td><td>1</td><td>100</td><td>0.45</td><td>3.6</td><td>1.3</td><td>21</td></tr>
+          <tr><td>78</td><td>12</td><td>77</td><td>60</td><td>1.8</td><td>60</td><td>0.45</td><td>6.2</td><td>1.3</td><td>23</td></tr>
+          <tr><td>103</td><td>12</td><td>60</td><td>60</td><td>2.4</td><td>46</td><td>0.45</td><td>8.2</td><td>1.3</td><td>23</td></tr>
+          <tr><td>171</td><td>12</td><td>35</td><td>60</td><td>4</td><td>27</td><td>0.45</td><td>9</td><td>1.3</td><td>25</td></tr>
+          <tr><td>226</td><td>12</td><td>26</td><td>60</td><td>5.2</td><td>20</td><td>0.45</td><td>9</td><td>1.3</td><td>25</td></tr>
+          <tr><td>377</td><td>12</td><td>16</td><td>60</td><td>8.4</td><td>12</td><td>0.45</td><td>9</td><td>1.3</td><td>27</td></tr>
+          <tr><td>500</td><td>12</td><td>12</td><td>60</td><td>9</td><td>9</td><td>0.45</td><td>9</td><td>1.3</td><td>27</td></tr>
+          <tr><td>4.4</td><td>24</td><td>1360</td><td>40</td><td>0.1</td><td>1000</td><td>0.25</td><td>0.35</td><td>0.7</td><td>17</td></tr>
+          <tr><td>9.6</td><td>24</td><td>620</td><td>40</td><td>0.22</td><td>450</td><td>0.25</td><td>0.75</td><td>0.7</td><td>17</td></tr>
+          <tr><td>21.3</td><td>24</td><td>280</td><td>40</td><td>0.5</td><td>220</td><td>0.25</td><td>1.7</td><td>0.7</td><td>19</td></tr>
+          <tr><td>35</td><td>24</td><td>170</td><td>40</td><td>0.8</td><td>130</td><td>0.25</td><td>2.8</td><td>0.7</td><td>21</td></tr>
+          <tr><td>46</td><td>24</td><td>130</td><td>40</td><td>1</td><td>100</td><td>0.25</td><td>3.6</td><td>0.7</td><td>21</td></tr>
+          <tr><td>78</td><td>24</td><td>77</td><td>40</td><td>1.8</td><td>60</td><td>0.25</td><td>6.2</td><td>0.7</td><td>23</td></tr>
+          <tr><td>103</td><td>24</td><td>60</td><td>40</td><td>2.4</td><td>46</td><td>0.25</td><td>8.2</td><td>0.7</td><td>23</td></tr>
+          <tr><td>171</td><td>24</td><td>35</td><td>40</td><td>4</td><td>27</td><td>0.25</td><td>9</td><td>0.7</td><td>25</td></tr>
+          <tr><td>226</td><td>24</td><td>26</td><td>40</td><td>5.2</td><td>20</td><td>0.25</td><td>9</td><td>0.7</td><td>25</td></tr>
+          <tr><td>377</td><td>24</td><td>16</td><td>40</td><td>8.4</td><td>12</td><td>0.25</td><td>9</td><td>0.7</td><td>27</td></tr>
+          <tr><td>500</td><td>24</td><td>12</td><td>40</td><td>9</td><td>9</td><td>0.25</td><td>9</td><td>0.7</td><td>27</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
   <div class="note"><b>Steady-state tests:</b> after confirming the rated voltage, take three operating points at approximately <b>70%, 80% and 90%</b> of the rated voltage (or the values specified by the tutor). Record the <b>actual measured motor-terminal voltage</b> at each point.</div>
   <p id="targetVoltages" class="muted">Enter the motor rated voltage above to see the suggested 70%, 80% and 90% test voltages.</p>
 </section>
@@ -92,7 +139,12 @@
     <li>If the speed is <b>negative</b> while the motor is rotating in the intended forward direction, change the encoder sign from −1 to +1, or from +1 to −1, then click <b>Apply encoder settings</b>.</li>
   </ol>
   <div class="note"><b>Use a positive speed for the Practical 1 calculations.</b> Change the encoder sign to correct the measurement sign rather than reversing the motor wiring just to make the displayed speed positive.</div>
-  <p class="muted" style="margin-bottom:0">The Practical 1 webpage displays <b>gearbox-output speed</b>. The encoder is mounted on the motor shaft, but the firmware CPR is calibrated so that the webpage reports output-shaft rpm.</p>
+  <p class="muted" style="margin-bottom:0">The encoder provides approximately <b>11 pulses per motor-shaft revolution per channel</b>. With x4 quadrature counting and the demonstrated 21.3:1 gearbox, the effective output-shaft count is approximately 11 × 4 × 21.3 = 937 counts/revolution. The Practical 1 firmware is therefore configured with an effective CPR of <b>937</b> so the webpage reports gearbox-output rpm.</p>
+  <details style="margin-top:10px">
+    <summary><b>Advanced encoder setting</b></summary>
+    <p class="muted">Students normally do not need to change CPR. Only change this if the tutor confirms that your platform uses a different encoder/gearbox combination.</p>
+    <label style="max-width:260px">Effective encoder CPR<input id="cpr" type="number" min="1" step="1" value="937"></label>
+  </details>
 </section>
 
 <section class="card">

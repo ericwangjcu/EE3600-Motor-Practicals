@@ -276,7 +276,16 @@ function updateLive(r){
   $("outRpm").textContent=r.rpm.toFixed(1)+" rpm";
   $("motorRpm").textContent=(r.rpm*ratio()).toFixed(0)+" rpm";
   $("encCount").textContent=String(r.count);
-  if(lastCount!==null&&r.count!==lastCount){$("encBadge").textContent="Encoder pulses detected";$("encBadge").className="badge ok"}
+  if(r.rpm < -1){
+    $("encBadge").textContent="Negative speed — check encoder sign";
+    $("encBadge").className="badge";
+  }else if(r.rpm > 1){
+    $("encBadge").textContent="Encoder direction OK";
+    $("encBadge").className="badge ok";
+  }else if(lastCount!==null&&r.count!==lastCount){
+    $("encBadge").textContent="Encoder pulses detected";
+    $("encBadge").className="badge ok";
+  }
   lastCount=r.count;
 }
 async function applyEncoder(){

@@ -14,7 +14,7 @@ The current practical page uses only the Practical 1 encoder/speed-measurement f
 
 - Encoder A → GP26
 - Encoder B → GP27
-- The HTML default CPR is 937 for the demonstrated platform. Confirm the platform specification with the tutor if a different motor/gearbox is used.
+- The current Practical 1 HTML uses an effective motor-shaft CPR of 22 based on bench testing with the supplied encoder and firmware. The gearbox ratio is entered separately in the webpage.
 
 ## Loading the UF2 onto the Pico
 

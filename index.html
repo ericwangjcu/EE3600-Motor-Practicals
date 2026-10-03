@@ -139,11 +139,11 @@
     <li>If the speed is <b>negative</b> while the motor is rotating in the intended forward direction, change the encoder sign from −1 to +1, or from +1 to −1, then click <b>Apply encoder settings</b>.</li>
   </ol>
   <div class="note"><b>Use a positive speed for the Practical 1 calculations.</b> Change the encoder sign to correct the measurement sign rather than reversing the motor wiring just to make the displayed speed positive.</div>
-  <p class="muted" style="margin-bottom:0">The encoder provides approximately <b>11 pulses per motor-shaft revolution per channel</b>. With x4 quadrature counting and the demonstrated 21.3:1 gearbox, the effective output-shaft count is approximately 11 × 4 × 21.3 = 937 counts/revolution. The encoder is mounted on the motor shaft. Use the <b>motor-shaft encoder CPR</b> (approximately 44 counts/rev with x4 quadrature on the demonstrated encoder). The gearbox ratio is entered separately, and the webpage calculates gearbox-output speed from the measured motor-shaft speed.</p>
+  <p class="muted" style="margin-bottom:0">The encoder is mounted on the motor shaft. Bench testing with the current Practical 1 firmware shows that the correct <b>effective motor-shaft CPR is 22</b>. The gearbox ratio is entered separately, and the webpage calculates gearbox-output speed from the measured motor-shaft speed. This keeps the same firmware/page usable with both the 4.4:1 and 21.3:1 gearbox versions.</p>
   <details style="margin-top:10px">
     <summary><b>Advanced encoder setting</b></summary>
     <p class="muted">Students normally do not need to change CPR. Only change this if the tutor confirms that your platform uses a different encoder.</p>
-    <label style="max-width:260px">Motor-shaft encoder CPR<input id="cpr" type="number" min="1" step="1" value="44"></label>
+    <label style="max-width:260px">Motor-shaft encoder CPR<input id="cpr" type="number" min="1" step="1" value="22"></label>
   </details>
 </section>
 
@@ -341,7 +341,7 @@ function updateLive(r){
   lastCount=r.count;
 }
 async function applyEncoder(){
-  const c=Math.max(1,Math.round(parseFloat($("cpr").value)||44)),s=+$("encSign").value;
+  const c=Math.max(1,Math.round(parseFloat($("cpr").value)||22)),s=+$("encSign").value;
   await seq(["CPR,"+c,"ENCSIGN,"+s,"STATUS"])
 }
 function startRec(){logRows=[];startTime=performance.now();recording=true;$("samples").textContent="0";$("recState").textContent="Recording...";$("download").disabled=true}

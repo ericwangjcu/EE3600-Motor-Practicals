@@ -133,7 +133,7 @@
   <h2>Encoder direction and sign</h2>
   <div class="top">
     <div class="row">
-      <label>Encoder sign<select id="encSign"><option value="-1" selected>-1</option><option value="1">+1</option></select></label>
+      <label>Encoder sign<select id="encSign"><option value="-1">-1</option><option value="1" selected>+1</option></select></label>
       <button id="applyEncoder" disabled>Apply encoder settings</button>
     </div>
     <span id="encBadge" class="badge">Waiting for encoder</span>
@@ -293,7 +293,7 @@ async function connect(){
     port=await navigator.serial.requestPort();
     await port.open({baudRate:115200});
     writer=port.writable.getWriter();reading=true;setConnected(true);readLoop();
-    await delay(200);await seq(["STOP","HELLO","CPR,44","ENCSIGN,-1","STREAM,ON","STATUS"]);await delay(100);
+    await delay(200);await seq(["STOP","HELLO","CPR,44","ENCSIGN,+1","STREAM,ON","STATUS"]);await delay(100);
   }catch(e){log("Connection error: "+e.message);try{if(port)await port.close()}catch(_){}port=null;setConnected(false)}
 }
 async function disconnect(){

@@ -296,23 +296,59 @@ async function connect(){
     await delay(200);await seq(["STOP","HELLO","CPR,44","ENCSIGN,+1","STREAM,ON","STATUS"]);await delay(100);
   }catch(e){log("Connection error: "+e.message);try{if(port)await port.close()}catch(_){}port=null;setConnected(false)}
 }
+function resetDisconnectedUi(){
+  latest=null;
+  $("fw").textContent="Firmware: not detected";
+  $("encBadge").textContent="Waiting for encoder";
+  $("encBadge").className="badge";
+  setConnected(false);
+}
 async function disconnect(){
+  // Clear the active port first so the read loop cannot immediately restart
+  // while the serial stream is being cancelled/closed.
   reading=false;recording=false;
-  try{if(reader){await reader.cancel();reader.releaseLock()}}catch(_){}reader=null;
-  try{if(writer)writer.releaseLock()}catch(_){}writer=null;
-  try{if(port)await port.close()}catch(_){}port=null;latest=null;$("fw").textContent="Firmware: not detected";setConnected(false)
+  const p=port;port=null;
+  const rd=reader;reader=null;
+  const wr=writer;writer=null;
+  try{if(rd)await rd.cancel()}catch(_){}
+  try{if(rd)rd.releaseLock()}catch(_){}
+  try{if(wr)wr.releaseLock()}catch(_){}
+  resetDisconnectedUi();
+  try{if(p)await p.close()}catch(_){}
 }
 async function readLoop(){
+  let deviceLost=false;
   while(port&&reading){
+    const activePort=port;
     try{
-      reader=port.readable.getReader();
-      while(reading){
-        const {value,done}=await reader.read();if(done)break;
+      reader=activePort.readable.getReader();
+      while(reading&&port===activePort){
+        const {value,done}=await reader.read();
+        if(done){deviceLost=reading&&port===activePort;break}
         rx+=dec.decode(value,{stream:true}).replace(/\0/g,"");
         let i;while((i=rx.indexOf("\n"))>=0){const line=rx.slice(0,i).replace(/\r/g,"").trim();rx=rx.slice(i+1);if(line)handleLine(line)}
       }
-    }catch(e){if(reading)log("Read error: "+e.message)}
-    finally{try{if(reader)reader.releaseLock()}catch(_){}reader=null}
+    }catch(e){
+      // A USB cable unplug used to leave this loop running and repeatedly
+      // logging read errors, which could make the whole page appear frozen.
+      if(reading&&port===activePort){
+        deviceLost=true;
+        reading=false;
+        log("Pico disconnected.");
+      }
+    }finally{
+      try{if(reader)reader.releaseLock()}catch(_){}
+      reader=null;
+    }
+    if(deviceLost)break;
+  }
+  if(deviceLost){
+    recording=false;
+    const p=port;port=null;
+    try{if(writer)writer.releaseLock()}catch(_){}
+    writer=null;
+    resetDisconnectedUi();
+    try{if(p)p.close().catch(()=>{})}catch(_){}
   }
 }
 function handleLine(line){
@@ -383,6 +419,20 @@ function draw(){
 requestAnimationFrame(draw);
 
 $("connect").onclick=connect;
+if("serial" in navigator){
+  navigator.serial.addEventListener("disconnect",()=>{
+    if(port){
+      reading=false;
+      recording=false;
+      const p=port;port=null;
+      try{if(reader)reader.cancel().catch(()=>{})}catch(_){}
+      try{if(writer)writer.releaseLock()}catch(_){}
+      writer=null;
+      resetDisconnectedUi();
+      try{if(p)p.close().catch(()=>{})}catch(_){}
+    }
+  });
+}
 $("applyEncoder").onclick=applyEncoder;
 function updateTargets(){
   const v=parseFloat($("ratedVoltage").value);

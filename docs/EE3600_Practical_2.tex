@@ -1,4 +1,4 @@
-% EE3600 Practical 2: task-sheet revision, 25 October 2026.
+% EE3600 Practical 2: concise continuation of Practical 1, 26 October 2026.
 % Build: pdflatex -interaction=nonstopmode -halt-on-error EE3600_Practical_2.tex
 % The selected lecture PDF is intentionally unchanged.
 \documentclass[11pt,a4paper]{article}
@@ -9,7 +9,7 @@
 \hypersetup{pdftitle={EE3600 Practical 2: DC Motor Speed Control},pdfsubject={Required speed control and optional position extension}}
 \usepackage{fancyhdr}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{5pt}
+\setlength{\parskip}{4pt}
 \setlength{\emergencystretch}{2em}
 \setlist[itemize]{leftmargin=1.5em,itemsep=1pt,topsep=3pt,parsep=0pt}
 \setlist[enumerate]{leftmargin=1.7em,itemsep=3pt,topsep=3pt,parsep=0pt}
@@ -21,136 +21,77 @@
 \pagestyle{fancy}
 \fancyhf{}
 \renewcommand{\headrulewidth}{0pt}
-\fancyfoot[L]{\footnotesize EE3600 Practical 2 \quad | \quad 25 October 2026}
-\fancyfoot[R]{\footnotesize\thepage/5}
-\newcommand{\sect}[1]{\vspace{5pt}\noindent{\large\bfseries #1}\par\vspace{2pt}}
+\fancyfoot[L]{\footnotesize EE3600 Practical 2 \quad | \quad 26 October 2026}
+\fancyfoot[R]{\footnotesize\thepage/4}
+\newcommand{\sect}[1]{\vspace{3pt}\noindent{\large\bfseries #1}\par\vspace{2pt}}
 \newcommand{\sub}[1]{\vspace{3pt}\noindent\textbf{#1}\par}
 \newcommand{\ui}[1]{\textbf{#1}}
 \newcommand{\K}{K_{\mathrm{PWM}}}
 \newcommand{\rpm}{\mathrm{RPM}}
 \begin{document}
 \begin{center}
-{\Large\bfseries EE3600 -- Practical 2:\\[3pt]
-DC Motor Speed Control with P/PI/PID}\\[6pt]
-{\normalsize Optional extension: gearbox-output position control}
+{\Large\bfseries EE3600 -- Practical 2: DC Motor Speed Control}\\[5pt]
+{\normalsize Required speed task: pages 1--3 \quad | \quad Optional position: page 4}
 \end{center}
 
 \sect{0. Purpose}
-Continue from your completed Practical 1 speed curve and measured first-order motor model. \textbf{Speed control and its Pico implementation are required; position control is optional.} Choose \textbf{one applicable tuning method} from the lecture, calculate initial gains, test them in simulation, implement them, and assess the measured response. PI is sufficient if it meets the requirements; using all three PID terms is not a requirement.
+Use your validated P1 values $\overline K$, $\overline\tau$ and gearbox ratio $N$ for feedback speed control. Choose \textbf{one applicable method}: analytical, Ziegler--Nichols or computational. Simulate, implement on the Pico and assess the measured response. PI is sufficient if it meets the targets. Position control is optional (page 4).
 
-The three routes are analytical design (Section 3), Ziegler--Nichols where applicable (Section 4), and computational tuning (Section 5). Manual adjustment may refine any route. You do not have to perform all three methods on the motor.
+\sect{1. Handover from Practical 1}
+Carry forward $G_{P1}(s)=\overline K/(\overline\tau s+1)$, from terminal volts to gearbox-output rad/s. With signed fractional duty $u$ ($0.40=40\%$) and motor-board supply $V_s$, use nominal $V_a\approx V_su$:
+\[
+G_n(s)=\frac{n_{\mathrm{motor}}(s)}{u(s)}=\frac{\K}{\tau s+1},\qquad
+\boxed{\K=\overline K\,N\,\frac{60}{2\pi}V_s,\quad\tau=\overline\tau.}
+\]
+$\K$ is motor RPM per fractional duty. The webpage's model helper labels this plant gain $K_u$; this sheet uses $\K$ to distinguish it from the Ziegler--Nichols ultimate gain.
+\begin{itemize}
+\item \textbf{Motor-drive change:} with power off, move the motor leads to the driver's \textbf{Motor 1} and connect the supply to the board's power input. Retain the P1 encoder wiring.
+\item \textbf{P2 settings:} \ui{Counts / motor revolution} = \textbf{44} (x4-decoded counts); \ui{Gear ratio (motor / output)} = \textbf{21.3} for the demonstrated platform; use the confirmed $N$ for other kits. Do not enter P1's effective \textbf{937 output-shaft counts} as motor-shaft counts.
+\end{itemize}
+Keep the P1 motor and load; assess driver/supply effects in the new closed-loop results.
 
-\sect{1. Review and Simplification}
-\sub{A) Carry forward your Practical 1 result}
-The full voltage-to-speed model is
-\[
-\frac{\omega(s)}{V_a(s)}=
-\frac{K_t}{LJ s^2+(RJ+LD)s+(RD+K_tK_b)}.
-\]
-Neglecting the fast electrical dynamics gives the first-order form already fitted in Practical 1. Reuse your measured and validated model:
-\[
-G_{P1}(s)=\frac{\omega_{\mathrm{out}}(s)}{V_a(s)}
-=\frac{\overline K}{\tau s+1}.
-\]
-Record $\overline K$ in output rad\,s$^{-1}$\,V$^{-1}$, $\tau$ in seconds, and the motor, gearbox and load used. Attach the P1 speed curve and model-validation plot. \textbf{A new identification experiment is not required.}
-
-\sub{B) Convert once into the controller's units}
-The supplied controller uses motor-shaft RPM and signed fractional duty $u$ (for example, $u=0.40$ means 40\%). Let $N$ be motor revolutions per output revolution and $V_s$ the actual motor-board supply voltage. Using the nominal approximation $V_a\approx V_su$,
-\[
-G_n(s)=\frac{n_{\mathrm{motor}}(s)}{u(s)}=\frac{\K}{\tau s+1},
-\qquad
-\boxed{\K=\overline K\,N\,\frac{60}{2\pi}\,V_s}.
-\]
-$\K$ has units motor RPM per fractional duty; $\tau$ is unchanged. The website's \ui{Convert P1 model} and \ui{Use converted model} buttons perform this handover. If your P1 result is already in these units, select the already-converted option. Driver losses and supply variation can cause prediction errors; assess these in the control trials.
-
-\sub{C) Optional position model}
-Position is the integral of speed. For the website's gearbox-output angle in degrees,
-\[
-G_\theta(s)=\frac{\theta_{\mathrm{out}}(s)}{u(s)}
-=\frac{A}{s(\tau s+1)},\qquad
-A=\frac{6\K}{N}=\frac{180}{\pi}V_s\overline K.
-\]
-Use this conversion for output degrees; do not multiply by the gear ratio again.
-
-\newpage
-\sect{2. Baseline Closed-Loop System and Performance}
-\sub{A) Establish a proportional-control baseline}
-Use unity negative feedback: $e=r-y$, controller $u=C(s)e$, and plant output $y=G(s)u$. The reference-to-output transfer function is
-\[
-T(s)=\frac{C(s)G(s)}{1+C(s)G(s)}.
-\]
-For speed with $C(s)=K_p$,
-\[
-T_n(s)=\frac{\K K_p}{\tau s+1+\K K_p},\qquad
-\tau_{\mathrm{cl}}=\frac{\tau}{1+\K K_p},\qquad
-\frac{e_{ss}}{r_f}=\frac{1}{1+\K K_p}
-\]
-for a nonzero step from rest. Increasing $K_p$ speeds up the ideal response and reduces its steady-state error, but cannot make that error zero at finite gain. Choose a feasible reference from your P1 speed curve and a modest gain that respects the duty limit. Simulate this baseline and record the error as well as the response time.
-
-\sub{B) Required speed-control targets}
-Use the same reference step, load, supply and duty limit when comparing designs.
+\sect{2. Speed Targets and Proportional Baseline}
+\sub{A) Required performance}
+Use an achievable step $r_0\to r_f$ in motor RPM; compare designs under the same conditions.
 \begin{center}\small
-\begin{tabular}{@{}p{42mm}p{112mm}@{}}
+\begin{tabular}{@{}p{38mm}p{116mm}@{}}
 \toprule
-Quantity & Teaching target and definition\\
+Quantity & Target and definition\\
 \midrule
-Overshoot & $\leq 5\%$ of the commanded step magnitude, measured beyond the commanded final value.\\
-Rise time $t_r$ & $\leq 0.50$ s; time between 10\% and 90\% of the commanded change.\\
-Settling time $t_s$ & $\leq 1.00$ s; enter the target band and remain there for the rest of the assessed run, including at least a 2 s final dwell.\\
-Final tracking error & Mean absolute error over the last 2 s $\leq \max(0.02|r_f|,2q_n)$ motor RPM. Also report signed bias.\\
+Overshoot & $\leq5\%$ of the commanded step magnitude, beyond the final target.\\
+Rise time $t_r$ & $\leq0.50$ s; 10--90\% of the commanded change.\\
+Settling time $t_s$ & $\leq1.00$ s; remain inside the target band for all later assessment samples, including at least 2 s final dwell.\\
+Final tracking error & Last-2-s mean absolute error $\leq\max(0.02|r_f|,2q_n)$ motor RPM. Also report signed bias.\\
 \bottomrule
 \end{tabular}
 \end{center}
-For $C_m$ encoder counts per motor revolution and the 50 ms speed window,
-\[
-q_n=\frac{60}{0.050\,C_m}\ \rpm,\qquad
-b_n=\max(0.02|r_f-r_0|,2q_n)\ \rpm.
-\]
-$b_n$ is the speed settling band about $r_f$. The website reports the actual band. With $C_m=44$, two quanta are about 54.5 motor RPM; state when this resolution floor governs your result. Missing or insufficient data cannot establish a pass. These are lab design targets to be checked on the real kit.
+For $C_m$ counts per motor revolution and the 50 ms speed window, $q_n=60/(0.050C_m)$ motor RPM. The settling band is $b_n=\max(0.02|r_f-r_0|,2q_n)$ about $r_f$. With $C_m=44$, the floor is 54.5 motor RPM. Report the displayed band and whether the floor governs it. Insufficient data cannot establish a pass.
 
-\sect{3. Analytical Design}
-\sub{A) Required speed task: a straightforward initial PI design}
-Choose a desired closed-loop time constant $T_c$. To obtain $T_n(s)=1/(T_cs+1)$ in the ideal model, choose
+\sub{B) Simulate a P-control baseline}
+Use unity negative feedback, $e=r-y$, and $u=C(s)e$. For $C(s)=K_p$,
+\[
+T(s)=\frac{C(s)G_n(s)}{1+C(s)G_n(s)},\qquad
+T_P(s)=\frac{\K K_p}{\tau s+1+\K K_p}.
+\]
+The ideal $\tau_{\mathrm{cl}}=\tau/(1+\K K_p)$ and step-error ratio $e_{ss}/r_f=1/(1+\K K_p)$ show that finite P speeds the response and reduces, but does not remove, offset. Simulate and record a modest gain within the duty limit.
+
+\newpage
+\sect{3. Analytical Method: Initial Speed PI Design}
+Choose a desired closed-loop time constant $T_c$. To obtain $T_n(s)=1/(T_cs+1)$ in the ideal model, use
 \[
 C(s)=K_p+\frac{K_i}{s}=\frac{\tau s+1}{\K T_c s},\qquad
 \boxed{K_p=\frac{\tau}{\K T_c},\quad K_i=\frac{1}{\K T_c},\quad K_d=0.}
 \]
-This controller places its zero at the model's pole. For the resulting first-order response, $t_r=\ln(9)T_c$, the 2\% settling time is $t_s=\ln(50)T_c$, nominal overshoot is zero, and the stable ideal loop has zero step error. Therefore,
+The controller zero cancels the model's stable pole. This gives $t_r=\ln(9)T_c$, a 2\% settling time $t_s=\ln(50)T_c$, zero nominal overshoot and zero nominal step error. Hence the required times give
 \[
 T_c\leq\min\!\left(\frac{0.50}{\ln9},\frac{1.00}{\ln50}\right)=0.228\ \mathrm{s}.
 \]
-For example, $T_c=0.20$ s predicts $t_r=0.439$ s and $t_s=0.782$ s. Insert \emph{your} $\K$ and $\tau$ to calculate the gains. This is an initial design, not a measured result: model error, finite duty and measurement delay may require slower tuning or a smaller step. Check the complete response in simulation before implementation.
+For example, $T_c=0.20$ s predicts $t_r=0.439$ s and $t_s=0.782$ s. Insert \emph{your} $\K$ and $\tau$ to obtain initial gains. These are model predictions: finite duty, measurement delay and model mismatch may require a slower design or smaller reference step. Validate the complete response before implementation.
 
-\newpage
-\sub{3B) Optional position design: P, then PD if needed}
-For the position plant, P control gives
-\[
-T_\theta(s)=\frac{A K_p}{\tau s^2+s+A K_p},\qquad
-\omega_n^2=\frac{A K_p}{\tau},\qquad
-2\zeta\omega_n=\frac{1}{\tau}.
-\]
-Here $\zeta\omega_n$ is fixed by the motor: \textbf{P control cannot choose damping and natural frequency independently.} Test whether a suitable $K_p$ meets the targets; do not solve for two independent performance choices using only one gain. The plant integrator already gives zero nominal step-position error in a stable ideal loop.
+\sect{4. Empirical Method: Ziegler--Nichols}
+The ultimate-gain method needs a finite positive proportional gain $K_u$ that produces sustained oscillation with period $T_u$. \textbf{The ideal first-order speed model has no such gain:} its characteristic polynomial $\tau s+1+\K K_p$ remains stable for every $K_p>0$.
 
-The lecture's optional position \emph{simulation} exercise uses overshoot $\leq5\%$, $0.25\leq t_s\leq0.80$ s and zero nominal steady-state error. Select a damping ratio and settling-time aim, then estimate
-\[
-\zeta\geq0.70\quad\hbox{for a 5\% overshoot limit},\qquad
-\omega_n\approx\frac{4}{\zeta t_s}.
-\]
-For the hardware's derivative-on-measurement PD form, $u=K_p(r-\theta)-K_d\dot\theta$ in the ideal unfiltered case,
-\[
-T_\theta(s)=\frac{A K_p}{\tau s^2+(1+A K_d)s+A K_p},\qquad
-\boxed{K_p=\frac{\tau\omega_n^2}{A},\quad
-K_d=\frac{2\zeta\omega_n\tau-1}{A},\quad K_i=0.}
-\]
-Use nonnegative gains and validate the chosen response. If the formula gives $K_d<0$, revisit the target or test P control; do not enter a negative derivative gain. The standard overshoot/settling formulas guide the ideal design. Filtering, sampling and limits change the implemented response. A conventional PD acting on error also adds a reference-path zero, so its step response must be checked separately.
-
-\sect{4. Empirical Design: Ziegler--Nichols}
-\sub{A) Check whether the method applies}
-The ultimate-gain method requires a finite positive proportional gain $K_u$ at which the loop has sustained oscillation with period $T_u$. \textbf{Neither ideal model in this practical has such a gain.} For $K_p>0$, the speed characteristic polynomial is $\tau s+1+\K K_p$; the position polynomial is $\tau s^2+s+A K_p$. Both remain stable for all positive $K_p$ in these ideal models.
-
-Thus, do not keep increasing gain until the ideal model appears to oscillate, and do not force the physical motor into an instability test. If the instructor supplies an appropriate higher-order/delayed model or a suitable recorded experiment, identify $K_u,T_u$ from that example. Otherwise, explain why this route is inapplicable and choose analytical or computational tuning.
-
-\sub{B) Convert an applicable $K_u,T_u$ into parallel gains}
+If the instructor supplies a suitable higher-order/delayed example or recorded experiment, identify $K_u,T_u$ from it and use the table. Otherwise, explain the limitation and select the analytical or computational route. Do not keep increasing gain to force sustained oscillation on this model or the physical motor.
 \begin{center}
 \begin{tabular}{@{}lccc@{}}
 \toprule
@@ -162,29 +103,41 @@ PID & $0.6K_u$ & $2K_p/T_u$ & $K_pT_u/8$\\
 \bottomrule
 \end{tabular}
 \end{center}
-These are initial values; Ziegler--Nichols can be too aggressive for a 5\% overshoot target. Simulate and refine them. $K_u$ here means \emph{ultimate controller gain}, not the motor-model gain $\K$.
+These parallel gains are initial values; Ziegler--Nichols may be too aggressive for a 5\% overshoot target. The reaction-curve alternative also needs an applicable response with a resolved positive delay $L$; the delay-free first-order model has $L=0$. For $K e^{-Ls}/(Ts+1)$, its PID rule is $K_p=1.2T/(KL)$, including the plant gain.
 
-\small The lecture's reaction-curve alternative also needs an applicable S-shaped response and a resolved positive delay $L$. A delay-free first-order model has $L=0$, and the position plant has an integrator, so its usual table cannot be applied directly here. For a model $K e^{-Ls}/(Ts+1)$, the reaction-curve PID rule includes plant gain: $K_p=1.2T/(KL)$; omitting $K$ assumes unit gain.\normalsize
+\sect{5. Computational Method and Simulation Checks}
+Use MATLAB/Simulink or a suitable alternative with the converted speed model and unity negative feedback. Start with PI. Use a tuning tool or the lecture's parameter-search approach, state the search range/settings, and assess every candidate against the Section 2 targets.
+\begin{itemize}
+\item \textbf{Controller convention:} use parallel gains. If software reports $K_p(1+1/(T_is)+T_ds)$, convert $K_i=K_p/T_i$ and $K_d=K_pT_d$. PI uses $K_d=0$.
+\item \textbf{If $K_d>0$:} match the Pico with PI on error minus filtered D on measured output, $T_f=0.020$ s (derivative setpoint weight zero).
+\item Check reference tracking and applied duty, including output saturation. The control interval is 10 ms and the speed window is 50 ms. Do not add the same measurement lag twice if it was already included in the fitted P1 model.
+\item When using \texttt{stepinfo}, assess against the commanded step/final target, including any tracking offset; do not accept a response that merely settles about the wrong speed.
+\end{itemize}
+\textbf{Whichever route you choose,} save the initial gains and simulation, then use page 3 to test and refine the controller. You do not need to complete all three tuning methods on hardware.
 
 \newpage
-\sect{5. Computational Tuning and Manual Refinement}
-\sub{A) Build and tune the complete feedback model}
-Use MATLAB/Simulink or another suitable control-design tool with the Section 1 model and units. Include an error summing junction with negative feedback.
+\sect{6. Implement and Test Speed Control}
+Use the provided \texttt{EE3600\_Practical\_2\_Pico.uf2} and the website's \texttt{practical2-control.html} page. Firmware installation follows the procedure already used in P1. The Pico runs the controller; the browser sets gains, records measurements and analyses the response.
 \begin{enumerate}
-\item Select PI for the speed task initially. Enter your measured $\K$ and $\tau$, chosen reference step and duty limits. For optional position use $A/[s(\tau s+1)]$ and start with P or PD.
-\item Use a PID tuning tool or the lecture's parameter-search approach. State the search range and evaluate overshoot, rise time, settling and tracking error against Section 2.
-\item Use \textbf{parallel} gains. For $K_d>0$, match the Pico: PI on error minus filtered D on measured output, with $T_f=0.020$ s (derivative setpoint weight zero). If software reports $K_p(1+1/(T_is)+T_ds)$, convert $K_i=K_p/T_i$ and $K_d=K_pT_d$. For PI, set $K_d=0$.
-\item Validate the complete reference-to-output response and applied duty. Include saturation and realistic measurement dynamics when available. The firmware controls every 10 ms and estimates speed over 50 ms. Do not add the same measurement lag twice if it was already included in your P1 fitted model.
+\item Open the P2 page in Chrome/Edge and choose \ui{Connect Pico}. In \ui{Hardware setup}, enter the actual supply, page 1's encoder/gear settings and agreed duty, speed and trial limits. Choose \ui{Apply configuration} while disarmed.
+\item Enter $\overline K,\overline\tau$ with the output-rad/s-per-volt option; choose \ui{Convert P1 model}, then \ui{Use converted model}. If using the \ui{Optional model-based gain helper}, enter $T_c$ and choose \ui{Calculate suggestions}. Copy reviewed gains into \ui{Speed control}; suggestions never apply them automatically.
+\item Enter \ui{Target motor speed (RPM)} and $K_p,K_i,K_d$, leaving duty headroom. Keep $T_f=0.020$ s initially. A 10 s trial accommodates the targets and final dwell. After changing to Motor 1, briefly check at low duty that positive duty gives positive speed.
+\item Choose \ui{Arm \& run speed trial}. \ui{STOP} disarms; allow for coasting. Afterwards choose \ui{Analyse response} and \ui{Save CSV}. Save before the next trial, which starts a new recording.
+\item Stop before editing gains. Change one setting at a time and repeat under the same conditions. If the initial design passes, repeat it unchanged. If saturation, overshoot or noise grows, slow the tuning or reduce the demand.
 \end{enumerate}
-MATLAB's \texttt{stepinfo} can help measure timing. Check its final-value and threshold settings: assess the response against the \emph{commanded} target and step, including any tracking offset. Use the website's documented metrics for the hardware CSV.
+\begin{center}\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+$K_p$ & $K_i$ & $K_d$\\
+\midrule
+Duty / motor RPM & Duty / (motor RPM\,$\cdot$\,s) & Duty\,$\cdot$\,s / motor RPM\\
+\bottomrule
+\end{tabular}
+\end{center}
+Gains use \textbf{fractional duty}; the traces and CSV duty columns use percent. Do not copy gains from a percent-duty/output-RPM simulator without conversion. The firmware includes output limiting, anti-windup and filtered derivative on measurement. Reapply settings after a reboot.
 
-\sub{B) Refine the selected design by observation}
-Change one setting at a time under the same test conditions. If overshoot, saturation or noise grows, reduce the demand or slow the tuning. Integral action removes nominal speed offset but may worsen overshoot when output is limited. Add derivative only if it helps; the firmware filters it and applies it to the measured output.
-
-Keep the initial and final gains and explain adjustments. If the initial design meets the targets, retain it and repeat the run to check consistency. A software suggestion still requires measured validation.
-
-\sect{6. Comparison and Discussion}
-Summarise your chosen route using the following table; separate simulations from measurements. Include $K_p,K_i,K_d$ and their units in an adjacent table or caption.
+\sect{7. Results, Discussion and Deliverables}
+Separate model predictions from measurements. Report initial and final gains with units and use this comparison table; add hardware repetitions if useful.
 \begin{center}\small
 \begin{tabular}{@{}p{46mm}p{19mm}p{19mm}p{19mm}p{29mm}@{}}
 \toprule
@@ -197,48 +150,61 @@ Final hardware trial / repeat & & & & \\[3pt]
 \bottomrule
 \end{tabular}
 \end{center}
-Overlay reference and measured speed for the initial and final trials. Show applied duty and any saturation. Discuss:
-\begin{itemize}
-\item Which targets were met, and which were not? State the settling/error band used.
-\item How did gain changes affect the response and duty? What explains model/hardware differences?
-\item Why was the tuning route applicable? For Ziegler--Nichols, was a finite $K_u$ available?
-\end{itemize}
-For optional position, distinguish the lecture's simulation target from the browser's hardware guide: $t_r\leq0.75$ s and $t_s\leq1.50$ s. Report numerical results and both contexts clearly.
+Plot the reference, measured motor speed and applied duty for the initial and final trials. Use the armed trial data, excluding coasting after disarm. State the displayed settling/error bands, any saturation, and which targets were met. Discuss how the gain changes affected the response and why the motor differed from the prediction.
 
-\small\textit{Course reference:} \texttt{EE3600-PID Controller.pdf}, including the three tuning methods and their applicability. This task sheet defines the required speed task and optional position extension.\normalsize
+\textbf{Submit the new P2 work:}
+\begin{itemize}
+\item The carried-forward $\overline K,\overline\tau,N$, actual $V_s$, converted $\K,\tau$ and P2 settings.
+\item Your chosen method, applicability, calculations or search settings, and P-baseline/controller simulations.
+\item Initial/final gains, measured P2 CSVs and plots, the comparison table and a short discussion. No P1 plots, CSVs or identification calculations need to be resubmitted.
+\end{itemize}
+\small\textit{Lecture reference:} \texttt{EE3600-PID Controller.pdf}. Optional position work is entirely on the following page.\normalsize
 
 \newpage
-\sect{7. Raspberry Pi Pico Implementation}
-\sub{A) Required speed-control trial}
-Use the supplied Practical 2 firmware and the website's \texttt{practical2-control.html} page. The Pico runs the controller; the browser sets gains, plots measurements and saves results. No Thonny control loop is needed.
-\begin{enumerate}
-\item If needed, install \texttt{EE3600\_Practical\_2\_Pico.uf2} on the original RP2040 Pico: with motor power off, hold BOOTSEL while connecting USB and copy the UF2 to \texttt{RPI-RP2}. Keep the established Motor 1 and encoder wiring.
-\item Open the page in desktop Chrome or Edge; choose \ui{Connect Pico}. Close other applications using that serial port. In \ui{Hardware setup}, enter the actual supply, verified encoder counts/revolution and gear ratio, and agreed duty, speed and trial limits. Choose \ui{Apply configuration} while disarmed.
-\item Secure the motor with the shaft free to turn. Use \ui{Optional diagnostics} for a brief low-duty direction check: positive duty must give positive speed. Reuse the established supply/current limits; the page does not measure voltage or current. Resolve sign errors before closed-loop operation.
-\item Enter the P1 model; choose \ui{Convert P1 model}, then \ui{Use converted model}. Calculate gains by your chosen route. \ui{Calculate suggestions} only displays values; enter your chosen gains into \ui{Speed control} yourself.
-\item Enter an achievable \ui{Target motor speed (RPM)} and gains in the units below, leaving correction headroom. Keep derivative filter $T_f=0.020$ s initially. Use a finite trial with at least 2 s after settling; the default 10 s accommodates the stated targets.
-\item Choose \ui{Arm \& run speed trial}. Use \ui{STOP} if needed; confirm DISARMED and allow for coasting. Afterwards, choose \ui{Analyse response} and \ui{Save CSV}. Save each run before the next. Stop before changing gains/configuration, then repeat under the same conditions.
-\end{enumerate}
+\sect{8. Optional Extension: Position Control}
+Complete the required speed task first. This extension controls the gearbox-output angle, in degrees relative to a stopped zero. Use the same tuning, simulation and measured-validation approach, with the position model and gains below.
+
+\sub{A) Obtain the position model from the speed model}
+Because position integrates speed,
+\[
+G_\theta(s)=\frac{\theta_{\mathrm{out}}(s)}{u(s)}=\frac{A}{s(\tau s+1)},\qquad
+A=\frac{6\K}{N}=\frac{180}{\pi}V_s\overline K.
+\]
+This is output degrees per fractional duty; do not multiply by $N$ again. With P control,
+\[
+T_\theta(s)=\frac{A K_p}{\tau s^2+s+A K_p},\qquad
+\omega_n^2=\frac{A K_p}{\tau},\qquad 2\zeta\omega_n=\frac{1}{\tau}.
+\]
+Thus \textbf{P cannot set damping and natural frequency independently}. The plant integrator gives zero nominal step-position error in a stable ideal loop; integral control is not automatically required. Test P first or proceed to PD/computational design.
+
+\sub{B) Design PD from the desired response}
+Keep the lecture's optional \textbf{simulation} goals: overshoot $\leq5\%$, $0.25\leq t_s\leq0.80$ s and zero nominal steady-state error. Choose damping and a settling-time aim; for the standard second-order approximation,
+\[
+\zeta\geq0.70\quad\hbox{for a 5\% overshoot limit},\qquad
+\omega_n\approx\frac{4}{\zeta t_s}.
+\]
+For derivative on measurement, the ideal unfiltered controller is $u=K_p(r-\theta)-K_d\dot\theta$, giving
+\[
+T_\theta(s)=\frac{A K_p}{\tau s^2+(1+A K_d)s+A K_p},\qquad
+\boxed{K_p=\frac{\tau\omega_n^2}{A},\quad
+K_d=\frac{2\zeta\omega_n\tau-1}{A},\quad K_i=0.}
+\]
+If $K_d<0$, revisit the chosen response or test P; do not enter negative derivative gain. Validate the complete response with the 10 ms control interval, duty limits and filtered D on measurement ($T_f=0.020$ s). PD on error adds a reference-path zero, so its step response is different.
+
+The ideal position characteristic $\tau s^2+s+A K_p$ is stable for every $K_p>0$ and has no finite positive Ziegler--Nichols ultimate gain. Its integrator also rules out the usual open-loop reaction-curve rule. Use analytical/computational design unless a suitable different example is supplied.
+
+\sub{C) Implement, measure and report}
+Open \ui{Optional extension \textperiodcentered\ Position control}. With the motor stopped, choose \ui{Zero position}. Enter a \ui{Target output angle (degrees)} within the configured travel limit and your position gains:
 \begin{center}\small
-\begin{tabular}{@{}llll@{}}
+\begin{tabular}{@{}lll@{}}
 \toprule
-Mode & $K_p$ & $K_i$ & $K_d$\\
+$K_p$ & $K_i$ & $K_d$\\
 \midrule
-Speed & duty / motor RPM & duty / (motor RPM\,$\cdot$\,s) & duty\,$\cdot$\,s / motor RPM\\
-Position & duty / output degree & duty / (output degree\,$\cdot$\,s) & duty\,$\cdot$\,s / output degree\\
+Duty / output degree & Duty / (output degree\,$\cdot$\,s) & Duty\,$\cdot$\,s / output degree\\
 \bottomrule
 \end{tabular}
 \end{center}
-\small Gains use fractional duty; traces and CSV duty columns display percent. Do not copy gains from a percent-duty/output-RPM simulator without conversion. The firmware includes output limiting, anti-windup and filtered derivative on measurement. Settings must be reapplied after reboot.\normalsize
+Choose \ui{Arm \& run position trial}, then \ui{Analyse response} and \ui{Save CSV}. The angle is relative to the chosen zero, without shortest-path wrapping. Encoder-derived position does not independently measure backlash or slip.
 
-\sub{B) Optional position implementation}
-With the motor stopped, choose \ui{Zero position}. Enter an output angle within the travel limit and your position gains; choose \ui{Arm \& run position trial}. The angle is relative to this zero, in output degrees, without shortest-path wrapping. Save the response and duty CSV. Use error band $b_\theta=\max(2^\circ,720/(C_mN)\,{}^\circ)$ and at least 2 s final dwell. Encoder-derived position cannot independently measure gearbox backlash or slip.
-
-\sect{8. Deliverables}
-\begin{itemize}
-\item P1 model and validation evidence, unit conversion to $\K,\tau$, and confirmed configuration.
-\item Tuning method, applicability, calculations/search settings and baseline/design simulations.
-\item Initial/final gains with units; measured reference/speed/duty CSVs and plots; the Section 6 comparison against targets and discussion of adjustments and model/hardware differences.
-\item Position design/results only if completing the optional extension.
-\end{itemize}
+Report simulation goals separately from the browser's optional \textbf{hardware guide}: overshoot $\leq5\%$, rise time $\leq0.75$ s, settling time $\leq1.50$ s and final mean absolute error $\leq b_\theta$, where $b_\theta=\max(2^\circ,720/(C_mN)\,{}^\circ)$ is also the settling band. Require at least 2 s final dwell and use the last 2 s for error; $C_m=44,N=21.3$ gives $b_\theta=2^\circ$. Add your model, gains, simulation, measured reference/angle/duty plots and numerical comparison to the report only if completing this extension.
 \end{document}

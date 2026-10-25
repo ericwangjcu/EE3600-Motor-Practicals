@@ -1,6 +1,6 @@
 # Validation status
 
-Updated 25 October 2026 for the Practical 2 Pico control page and revised task sheet.
+Updated 26 October 2026 for the shorter Practical 2 task sheet. The software checks below were completed for the 25 October control-page release; the current revision changes documentation only.
 
 ## Passed locally
 
@@ -15,7 +15,7 @@ The supplied firmware source passes **109 host controller/protocol checks**, bui
 
 The firmware is the existing **EE3600_P2 1.0.0** release, copied unchanged. Source hashes match its build manifest. The Practical 1 UF2 is also unchanged. The hardware page's control core is unchanged from the existing test pack; integration edits concern navigation, labels and required/optional sections.
 
-The revised task sheet compiles to five A4 pages. Every page was rendered and visually inspected. HTML structure, relative links, and `git diff --check` were checked. The selected PID lecture PDF was not edited.
+The revised task sheet compiles to four A4 pages: three for required speed control and one for the optional position extension. Repeated Practical 1 identification, model derivation, setup tutorials and resubmission of P1 plots have been removed. Only the existing model and the P2-specific drive/unit handover are carried forward. Every page was rendered and visually inspected. The download path is unchanged, and `git diff --check` passes. The selected PID lecture PDF, website control logic and firmware were not edited in this revision.
 
 ## Native browser and physical checks
 

@@ -1,0 +1,120 @@
+EE3600_P2 USB serial protocol 1.0.0
+Target: original Raspberry Pi Pico (RP2040), Kitronik 5331, M1 GP3/GP2,
+encoder GP26/GP27. Build and host tests do not establish physical validation.
+
+ASCII commands end with LF or CRLF. Nominal USB baud: 115200.
+All numeric parameters must be finite. Maximum command: 191 characters.
+Only one application owns the port. Start with STOP,HELLO,STREAM,P2,STATUS
+(each is a separate command line). Send PING every 200 ms while connected.
+
+Responses may be interleaved with telemetry. Queue one non-PING command until
+its matching ACK/ERR; process PING ACKs separately. STOP has priority.
+  ACK,COMMAND
+  ERR,COMMAND,REASON
+  INFO,EE3600_P2,1.0.0
+  CAPS,SPEED_PID=1,POSITION_PID=1,STREAM_CONTROL=1,ARM_REQUIRED=1,
+       GAINS_DUTY_FRACTION=1,CONTROL_HZ=100,TELEMETRY_HZ=50
+CAPS is one line on the actual wire. HELLO produces INFO,CAPS,pin INFO,CONFIG,
+then ACK,HELLO. STATUS produces CONFIG then ACK,STATUS. New USB connections
+also produce INFO/CAPS, so duplicate identification lines are normal.
+
+Commands:
+  HELLO, HELP, STATUS, STOP, PING, ARM                 (no arguments)
+  MODE,OPEN | MODE,SPEED | MODE,POSITION               (POS alias accepted)
+  PWM,signed_percent                                 (open-loop mode only)
+  SPEED,signed_motor_shaft_rpm                        (speed mode only)
+  TARGET,signed_gearbox_output_degrees                (position mode only)
+  PIDSPEED,Kp,Ki,Kd,Tf_seconds
+  PIDPOS,Kp,Ki,Kd,Tf_seconds
+  CPR,counts_per_motor_revolution                     (1..100000)
+  GEAR,motor_to_output_ratio                          (1..1000)
+  ENCSIGN,+1 | ENCSIGN,-1
+  MOTORSIGN,+1 | MOTORSIGN,-1
+  SUPPLY,volts                                       (3..10; default9)
+  LIMIT,percent                                      (1..min(100,600/SUPPLY))
+  SPEEDLIMIT,motor_rpm                                (100..20000; default8000)
+  TRAVEL,output_degrees                               (10..720; default270)
+  DURATION,seconds                                   (.2..60; default10)
+  ZERO
+  STREAM,P2 | STREAM,ON | STREAM,OFF
+
+Default limit60%, CPR44, ratio21.3, both signs+1. These are setup assumptions,
+not measured calibration. All gains default0, Tf defaults.02s. Kp range0..10,
+Ki0..100, Kd0..10, Tf.001..1s. Gains use DUTY FRACTION, NOT PERCENT.
+Speed error uses MOTOR RPM; position error uses OUTPUT degrees. Thus:
+speed Kp[duty/RPM], Ki[duty/(RPM*s)], Kd[duty*s/RPM]; position uses degrees.
+
+Configuration, mode and gain changes require DISARMED. While ARMED these
+return ERR,...,DISARM_FIRST without changing the active configuration.
+All configuration changes and MODE clear the reference-ready flag. Apply
+configuration first, then gains, then the mode's reference, then PING,ARM.
+ARM requires a recent PING and an explicit reference, and nonzero gains for
+SPEED/POSITION. ARM resets integral/derivative state; the first output update
+occurs on the next100Hz tick. Numeric reference changes are allowed live in
+the matching mode. They do not extend the finite trial duration.
+
+STOP disarms, zeroes both drive inputs, clears fault and reference-ready flag.
+It retains numeric references for plotting; resend the reference before a
+new ARM. MODE also requires a new reference. ZERO requires DISARMED and motor
+speed <=20RPM; it makes the current count the relative output-angle zero.
+It is not homing. Counts/angles are unwrapped. STOP is coast, not active brake.
+
+USB/DTR loss and PING timeout (>1s) latch a FAULT with drive zero. Overspeed,
+position travel limit, control timing/nonfinite error and >750ms without any
+encoder motion while >=20% duty is applied also latch a fault. The no-motion
+rule is disabled within2 output degrees of a position target. A fault requires
+STOP followed by deliberate reconfiguration/reference/ARM; no auto-restart.
+DURATION expiry disarms normally and emits EVENT,DURATION_COMPLETE,t_ms.
+The RP2040 hardware watchdog resets the chip after500ms if the firmware stalls.
+
+Events:
+  EVENT,ARMED,t_ms
+  EVENT,REFERENCE,t_ms,new_value
+  EVENT,DURATION_COMPLETE,t_ms
+  EVENT,FAULT,t_ms,FAULT_NAME
+Events timestamp command acceptance/expiry. PWM first changes at the next
+100Hz control tick. DATA timestamps are device control-sample timestamps.
+
+P2 DATA frame: 15 comma-separated fields including prefix:
+0 DATA
+1 t_ms
+2 state                    DISARMED | ARMED | FAULT
+3 mode                     OPEN | SPEED | POSITION
+4 target                   PWMpercent | motorRPM | outputdegrees, by mode
+5 n_motor_rpm
+6 n_output_rpm
+7 theta_output_deg
+8 count                    signed count relative ZERO
+9 u_requested_pct
+10 u_applied_pct
+11 p_term_pct
+12 i_term_pct
+13 d_term_pct
+14 fault                   NONE or explicit fault name
+
+STREAM,ON selects legacy DATA2 frames with at least15 fields: device ms field1,
+motorRPM field6 and signed count field14, matching the Practical1 parser.
+No heartbeat is needed for disarmed encoder monitoring. Never use the old
+page's arbitrary console to actuate without the new protocol/session rules.
+
+CONFIG,{JSON} keys:
+firmware,state,mode,target,supply_v,duty_limit_pct,duty_hard_cap_pct,cpr_motor,
+gear_ratio,encoder_sign,motor_sign,speed_limit_rpm,travel_limit_deg,duration_s,
+pidspeed:{kp,ki,kd,tf},pidpos:{kp,ki,kd,tf},control_hz,telemetry_hz,
+speed_window_ms,heartbeat_timeout_ms,calibration,fault,pwm_hz.
+The calibration string remains 'assumed': software cannot certify calibration.
+Configuration is volatile and resets on reboot; the host should save/export it.
+
+Controller: fixed100Hz, PI-D with derivative on measured output. Integral uses
+current error and actual dt in seconds; Ki is not pre-multiplied by dt. Derivative
+uses a backward-Euler first-order filter. Conditional integration prevents
+windup against the final duty limit or direction-reversal coast interval.
+Direction changes insert one complete10ms interval of coast. No hidden bias,
+feedforward, friction boost or reference smoothing is present. Speed estimator
+uses a50ms backward count difference (~25ms effective smooth-signal delay);
+startup uses the shorter available window. PIO performs x4 quadrature counting.
+The core implementation/control.c is the authoritative exact update arithmetic.
+
+SUPPLY is a declared value, not a voltage measurement. The nominal6V duty cap
+is an average-voltage approximation, not current limiting or a motor guarantee.
+No current or temperature sensor is read by this firmware.

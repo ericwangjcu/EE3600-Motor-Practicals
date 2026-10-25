@@ -12,6 +12,7 @@
 </style>
 </head>
 <body><main>
+<nav class="card" aria-label="Practicals"><b>Practical 1</b> · <a href="practical2.html">Practical 2 — Simulation</a> · <a href="practical2-control.html">Practical 2 — Pico motor control</a></nav>
 <section class="card">
   <div class="top">
     <div>
@@ -275,6 +276,7 @@ y_phys = lsim(G_phys, u, t);</pre>
 </section>
 </main>
 
+<script src="js/encoder.js"></script>
 <script>
 const $=id=>document.getElementById(id), enc=new TextEncoder(), dec=new TextDecoder();
 let port=null,reader=null,writer=null,reading=false,rx="",latest=null,lastCount=null;
@@ -356,9 +358,7 @@ function handleLine(line){
   if(line.startsWith("INFO,EE3600_PRAC1_ENCODER") || line.startsWith("INFO,EE3600_P1_P2_COMBINED")) $("fw").textContent="Firmware: Practical 1 encoder firmware connected";
   else if(line.startsWith("INFO,PINS")) $("fw").textContent="Firmware: Practical 1 encoder firmware connected";
   if(!line.startsWith("DATA2,"))return;
-  const f=line.split(",");if(f.length<15)return;
-  const r={ms:+f[1],rpm:+f[6],count:+f[14]};
-  if(![r.ms,r.rpm,r.count].every(Number.isFinite))return;
+  const r=parseEncoderLine(line);if(!r)return;
   latest=r;updateLive(r);
   const now=performance.now();plotRows.push({...r});if(plotRows.length>1200)plotRows.shift();
   if(recording){logRows.push({...r,pc:(now-startTime)/1000});$("samples").textContent=logRows.length}

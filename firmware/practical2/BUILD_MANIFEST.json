@@ -1,0 +1,46 @@
+{
+  "version": "1.0.0",
+  "prepared_date": "2026-10-23",
+  "target": "Original Raspberry Pi Pico (RP2040)",
+  "board": "pico",
+  "hardware_tested": false,
+  "build": "Release",
+  "uf2_validation": {
+    "file": "EE3600_Practical_2_Pico.uf2",
+    "bytes": 122880,
+    "blocks": 240,
+    "payload_bytes": 61440,
+    "family": "RP2040",
+    "family_id": "0xe48bff56",
+    "flash_start": "0x10000000",
+    "flash_end_exclusive": "0x1000f000",
+    "sha256": "74c915c9541da3c637880ccb31a300a86ecdf59092494fd6d81171e5844b562b",
+    "result": "UF2 structure and embedded identity verified; hardware not tested"
+  },
+  "bin_matches_uf2_payload": true,
+  "sdk_version": "2.2.0",
+  "sdk_commit": "a1438dff1d38bd9c65dbd693f0e5db4b9ae91779",
+  "tinyusb_commit": "86ad6e56c1700e85f1c5678607a762cfe3aa2f47",
+  "compiler": "Arm GNU13.3.Rel1; GCC13.3.1 20240614",
+  "cmake": "3.31.6",
+  "ninja": "1.11.1",
+  "host_tests": {
+    "assertions": 109,
+    "result": "pass",
+    "address_sanitizer": "pass",
+    "undefined_behavior_sanitizer": "pass",
+    "leak_sanitizer": "disabled:containerprocaccess",
+    "hardware_exercised": false
+  },
+  "source_sha256": {
+    "control.c": "cc8f3759f944c46bc6b9ec1702014b1f9c4363fb6216005e84e5bf9cd3fc06d9",
+    "control.h": "396b2e3a1c23bf1c9f846fce23c1e54045d4c66397636c2543ac4732b89ebf4f",
+    "main.c": "cf9bcf0f676832aefd2d2eca830d699d87e758c8ac0ddea41185d2ed8c758e32",
+    "CMakeLists.txt": "7ef0b1ca0e20130c5f1c9aa70f428c01fe920b2d3edcce81eab59a37871b0b57",
+    "quadrature_encoder.pio": "9ac6b687dff969261ede9cb5e815971a9206a980a81990bbceec28e91401dd62",
+    "test_control.c": "c30fc981074dd7380fce8ac2d3b9e49c71bdf7cc26070b2905c7ba1fd8fe0087",
+    "PROTOCOL.txt": "1c99201e18baaec104ecbe98194a7e7cf4abf22ae1547ef68d9562b4449534d8",
+    "verify_uf2.py": "0e14d6d95a689287ad652819074c0667666094d5d4f1c746f58956d015fe5114",
+    "build.ps1": "70a8f6b0f7464a66b72b7c66053f9922a0501a8f871f2eab3e6dcdfdce611cbb"
+  }
+}

@@ -1,0 +1,97 @@
+EE3600 Practical 2 firmware, version 1.0.0
+
+Delivered status: a real compiled RP2040 UF2, source, and host-tested control
+logic. This release has NOT been flashed or physically tested on the motor.
+The user plans the bench test for Monday 26 October 2026.
+
+USING THE PREBUILT UF2
+Use EE3600_Practical_2_Pico.uf2 for the original Raspberry Pi Pico (RP2040).
+It is not a Pico 2/RP2350 binary. Use the supplied task sheet and interface.
+Keep the existing Practical 1 UF2 as a recovery copy; this package does not
+overwrite that file. Power the motor driver off during firmware replacement.
+Hold Pico BOOTSEL while connecting USB, copy the UF2 to RPI-RP2, then allow
+the Pico to reboot. The new firmware starts DISARMED with both drive pins zero.
+
+HARDWARE ASSUMPTIONS
+Kitronik 5331, Motor1 GP3 positive/GP2 negative; carrier PWM10kHz.
+Encoder A GP26/B GP27, PIO x4 decoding; defaults44counts/motor revolution,
+gear ratio21.3, both signs+1. These are assumed setup values, not new calibration.
+Default supply metadata9V and duty ceiling60%; supply is not measured by Pico.
+Motor speed unitsRPM; gearbox-output position unitsdegrees. All PID gain units
+use duty fraction. P/I/D gains defaultzero, Tf=.02s. All configuration is RAM
+only; it resets on reboot. Protocol and controller arithmetic: PROTOCOL.txt.
+
+BUILD TOOLS USED
+- Raspberry Pi Pico SDK2.2.0, commit
+  a1438dff1d38bd9c65dbd693f0e5db4b9ae91779
+- TinyUSB submodule commit86ad6e56c1700e85f1c5678607a762cfe3aa2f47
+- Arm GNU Toolchain13.3.Rel1: arm-none-eabi-gcc13.3.1 20240614
+- CMake3.31.6; Ninja1.11.1; Python3.12.14
+- Official picotool2.2.0 and SDK pioasm built by the SDK.
+- OriginalRP2040 target, PICO_BOARD=pico, Release build, 4KB core0 stack.
+
+OBTAIN THE SDK (developer only; no toolchain needed to use the supplied UF2)
+git clone --branch 2.2.0 --depth 1 https://github.com/raspberrypi/pico-sdk.git
+git -C pico-sdk submodule update --init --depth 1 lib/tinyusb
+
+Install CMake/Ninja and Arm GNU Toolchain13.3.Rel1 for your host OS. The compiler
+root passed as PICO_TOOLCHAIN_PATH must contain bin/arm-none-eabi-gcc.
+The official SDK fetches its matching picotool on the first configuration;
+this requires an internet connection. There are no toolchains in this package.
+
+WINDOWS POWERSHELL (from the firmware directory)
+.\build.ps1 -PicoSdkPath 'C:\path\pico-sdk' -ArmToolchainPath 'C:\path\arm-toolchain'
+If script execution is restricted, run the following CMake commands directly
+with your own paths; do not disable system policies merely to use the script.
+
+PORTABLE CMAKE COMMANDS (replace SDK_PATH and ARM_PATH with actual paths)
+cmake -S . -B build -G Ninja -DPICO_SDK_PATH=SDK_PATH -DPICO_TOOLCHAIN_PATH=ARM_PATH -DPICO_BOARD=pico -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 4
+
+For consistent build-date metadata, set SOURCE_DATE_EPOCH=1792713600 in the
+build environment. Build output: build/EE3600_Practical_2_Pico.uf2.
+Pinned inputs/build commands are supplied for reproduction; byte-identical
+output across different compiler versions/host environments is not promised.
+
+HOST CONTROL/PROTOCOL TESTS (GCC on Linux/macOS or compatible environment)
+gcc -std=c11 -Wall -Wextra -Werror -pedantic control.c test_control.c -lm -o test_control
+./test_control
+
+Executed result for this release: PASS,109 assertions. Tests cover startup
+disarm, argument/NaN/Inf rejection, duty/voltage limits, wrong-state commands,
+explicit reference/arm, sign-reversal coast, stop/no-auto-resume, heartbeat
+timeout, USB loss, finite duration, encoder no-motion, overspeed, control timing,
+speed/angle scale, zero, derivative-on-measurement/no setpoint kick, integral
+time units, anti-windup, position travel limits, CONFIG and legacy DATA2 fields.
+AddressSanitizer and UndefinedBehaviorSanitizer also passed. Leak scanning was
+disabled because this container cannot inspect /proc/task; the controller uses
+no dynamic allocation. These tests execute the portable C core, not Pico GPIO.
+
+UF2 STATIC VALIDATION
+python verify_uf2.py EE3600_Practical_2_Pico.uf2
+This checks every UF2 magic, family identifier, block count/sequence, payload
+size and address, and the embedded firmware/pin identity. BUILD_MANIFEST.json
+records the binary SHA-256 and source hashes. Official picotool also inspected
+the output as boardpico/RP2040, SDK2.2.0, programEE3600 Practical2 v1.0.0.
+
+IMPLEMENTATION NOTES
+- A 100Hz hardware alarm executes control; USB is outside this interrupt.
+- Dedicated PIO samples quadrature independently of USB and floating arithmetic.
+- Speed uses a50ms backward-count difference, approximately25ms effective
+  delay for smooth signals; the startup window is shorter.
+- Telemetry is sent at nominal50Hz with control-sample timestamps. Host lag or
+  USB backpressure can drop records; treat such gaps explicitly in analysis.
+- Every ARM has a finite duration (default10s, maximum60s). No auto-rearming.
+- PING every200ms is expected; expiry1s, USB loss or detected faults stop drive.
+- A hardware watchdog500ms resets into DISARMED if main/control execution stalls.
+- STOP/coast does not instantly stop shaft inertia; no current/temperature sensor
+  is present in this firmware. The nominal6V PWM cap is not current limiting.
+- PIO source comes from the official Raspberry Pi quadrature encoder example,
+  with its BSD-3-Clause notice. Bundled licences cover included components.
+
+PRIMARY IMPLEMENTATION SOURCES
+https://github.com/raspberrypi/pico-sdk/releases/tag/2.2.0
+https://datasheets.raspberrypi.com/pico/raspberry-pi-pico-c-sdk.pdf
+https://github.com/raspberrypi/pico-examples/tree/master/pio/quadrature_encoder
+https://raw.githubusercontent.com/KitronikLtd/Kitronik-Pico-Motor-Driver-Board-MicroPython/main/PicoMotorDriver.py
+https://resources.kitronik.co.uk/pdf/5331-compact-motor-driver-raspberry-pi-pico-datasheet.pdf

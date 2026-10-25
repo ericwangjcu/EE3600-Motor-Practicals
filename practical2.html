@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EE3600 / EE5610 Practical 2 — PID speed control</title><link rel="stylesheet" href="js/practical2.css"></head>
+<title>EE3600 / EE5610 Practical 2 — PID simulation</title><link rel="stylesheet" href="js/practical2.css"></head>
 <body><main>
-<nav class="card" aria-label="Practicals"><a href="index.html">Practical 1 — Motor identification</a><b>Practical 2</b> · <a href="docs/practical2-student.html">Student practical / print</a></nav>
-<section class="card"><div class="sectiontag">EE3600 / EE5610 · Week 6 · 19 October 2026</div>
-<h1>Practical 2 — PID Speed Control</h1><p>Compare open-loop and feedback control using your Practical 1 motor model. Tune the controller, track a reference and measure the response.</p>
+<nav class="card" aria-label="Practicals"><a href="index.html">Practical 1 — Motor identification</a><b aria-current="page">Practical 2 — Simulation</b> · <a href="practical2-control.html">Pico motor control</a> · <a href="docs/EE3600_Practical_2.pdf">Task sheet (PDF)</a></nav>
+<section class="card"><div class="sectiontag">EE3600 / EE5610 · Week 6</div>
+<h1>Practical 2 — PID Speed Simulation</h1><p>Compare open-loop and feedback control using your Practical 1 motor model. Tune the controller, track a reference and measure the response.</p>
 <div class="note safe"><b>Simulation mode — no motor commands.</b> All controller outputs and response graphs below are simulated. The optional Pico connection only monitors the encoder.</div>
-<p class="muted">Hardware PID is unavailable pending driver, wiring, firmware and operating-limit verification. Position control is covered as an extension in the student practical.</p></section>
+<p class="muted">Use <a href="practical2-control.html">Pico motor control</a> for the required bench speed-control task after checking the <a href="docs/practical2-hardware.md">hardware guide</a>. Position control is optional. This simulator uses <b>percent duty / output RPM</b>; the hardware speed loop uses <b>fractional duty / motor RPM</b>. For the same continuous controller, divide each simulation gain by <b>100 × N</b> before hardware entry, where N is the verified motor/output speed ratio. The filters and sample times also differ, so check the implemented response. No gains transfer automatically.</p></section>
 <section class="card"><h2>1. Experiment settings</h2><form id="settings"><div class="formgrid">
 <label>Control mode<select id="mode"><option value="closed">Closed loop — PID</option><option value="open">Open loop — fixed duty</option></select></label>
 <label>Reference speed (gearbox output rpm)<input id="target" type="number" min="0" max="2000" step="any" value="150" required></label>
@@ -35,6 +35,6 @@
 <p class="muted">Measurements use only the latest unchanged segment. Settling requires at least 1 s continuously within ±2% of the segment's speed-change amplitude; later excursions revoke it. Error is reference minus mean speed over the last 2 s, shown after 3 s. It is a steady-state error estimate only if the response has stopped changing. Overshoot/settling are undefined for a zero-amplitude segment. For load-only or tuning changes, use the graph and CSV to measure recovery.</p></section>
 <section class="card"><h2>4. Optional Pico encoder monitor</h2><p>Reuse the Practical 1 UF2 and encoder on GP26/GP27. Keep motor power off and turn the shaft by hand. Disconnect from Practical 1 before connecting here. This panel is separate from the simulation and is not a hardware control test.</p>
 <div class="formgrid"><label>Gearbox ratio<select id="gearRatio"><option value="21.3">21.3:1</option><option value="4.4">4.4:1</option></select></label><label>Encoder sign<select id="encSign"><option value="1">+1</option><option value="-1">−1</option></select></label></div>
-<div class="row" style="margin-top:12px"><button id="connect">Connect Pico (monitor only)</button><button disabled title="Requires verified driver wiring and control firmware">Hardware PID unavailable</button></div><p id="serialStatus" role="status">Not connected. Web Serial requires desktop Chrome/Edge on HTTPS or localhost.</p><p id="encoderReading">Encoder: —</p>
-<details><summary>Serial diagnostics</summary><pre id="console"></pre></details><p><a href="docs/hardware-readiness.md">Hardware investigation and release requirements</a></p></section>
+<div class="row" style="margin-top:12px"><button id="connect">Connect Pico (monitor only)</button><a class="buttonlink" href="practical2-control.html">Open Pico motor control</a></div><p id="serialStatus" role="status">Not connected. Web Serial requires desktop Chrome/Edge on HTTPS or localhost.</p><p id="encoderReading">Encoder: —</p>
+<details><summary>Serial diagnostics</summary><pre id="console"></pre></details><p><a href="docs/practical2-hardware.md">Practical 2 Pico setup and hardware guide</a></p></section>
 </main><script src="js/encoder.js"></script><script src="js/pid-model.js"></script><script src="js/practical2.js"></script><script src="js/encoder-monitor.js"></script></body></html>

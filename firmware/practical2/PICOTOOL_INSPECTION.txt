@@ -1,0 +1,24 @@
+File /workspace/scratch/d24863a9058d/practical2_release/firmware/EE3600_Practical_2_Pico.uf2 family ID 'rp2040':
+
+Program Information
+ name:              EE3600 Practical 2
+ version:           1.0.0
+ features:          USB stdin / stdout
+ binary start:      0x10000000
+ binary end:        0x1000efd4
+
+Fixed Pin Information
+ 2:                 M1 negative PWM
+ 3:                 M1 positive PWM
+ 26:                Encoder A (x4)
+ 27:                Encoder B (x4)
+
+Build Information
+ sdk version:       2.2.0
+ pico_board:        pico
+ boot2_name:        boot2_w25q080
+ build date:        Oct 23 2026
+ build attributes:  Release
+
+Metadata Blocks
+ none

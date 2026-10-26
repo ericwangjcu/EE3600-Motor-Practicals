@@ -1,0 +1,67 @@
+name: Format Practical 2 task-sheet PDF
+on:
+  push:
+    branches: [p2-pdf-format-20261027]
+    paths:
+      - 'docs/formatting/EE3600_Practical_2_Task_Sheet_Formatted.tex'
+      - '.github/workflows/p2-pdf-format.yml'
+permissions:
+  contents: write
+jobs:
+  pdf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install document tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended poppler-utils
+          python3 -m pip install --user pymupdf
+      - name: Build the revised task sheet
+        working-directory: docs/formatting
+        run: |
+          pdflatex -interaction=nonstopmode -halt-on-error EE3600_Practical_2_Task_Sheet_Formatted.tex
+          pdflatex -interaction=nonstopmode -halt-on-error EE3600_Practical_2_Task_Sheet_Formatted.tex
+          mkdir -p previews
+          pdftoppm -png -r 110 EE3600_Practical_2_Task_Sheet_Formatted.pdf previews/page
+          pdftotext -layout EE3600_Practical_2_Task_Sheet_Formatted.pdf extracted.txt
+      - name: Inspect page boundaries, content and fonts
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import fitz, json, re
+          folder=Path('docs/formatting')
+          doc=fitz.open(folder/'EE3600_Practical_2_Task_Sheet_Formatted.pdf')
+          report={'pages':len(doc),'page_details':[], 'scope':'Formatting-only copy of coordinator-supplied Codex revision; no website or firmware changes'}
+          for n,p in enumerate(doc):
+              spans=[s for b in p.get_text('dict')['blocks'] if 'lines' in b for l in b['lines'] for s in l['spans']]
+              report['page_details'].append({'page':n+1,'words':len(p.get_text('words')),'fonts':sorted(set(s['font'] for s in spans)), 'first_lines':p.get_text().splitlines()[:8],'bottom_body_y':max((s['bbox'][3] for s in spans if s['bbox'][1]>45 and s['bbox'][1]<790),default=0)})
+              assert all(s['bbox'][0]>=20 and s['bbox'][2]<=p.rect.width-18 for s in spans), f'Horizontal overflow on page {n+1}'
+          text='\n'.join(p.get_text() for p in doc)
+          for phrase in ['Choose an initial P gain','Choose an initial I gain, then refine','0.00008396','0.0003292','0.255','21.3:1','4.4:1','three fresh repeats','No position hardware trial is required.']:
+              assert phrase in text, phrase
+          report['overfull_log_lines']=[s for s in (folder/'EE3600_Practical_2_Task_Sheet_Formatted.log').read_text().splitlines() if 'Overfull' in s]
+          report['page_size']='A4'
+          report['pdf_bytes']=(folder/'EE3600_Practical_2_Task_Sheet_Formatted.pdf').stat().st_size
+          (folder/'formatting-check.json').write_text(json.dumps(report,indent=2)+'\n')
+          print(json.dumps(report,indent=2))
+          PY
+      - name: Store PDF and previews on formatting branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/formatting/EE3600_Practical_2_Task_Sheet_Formatted.pdf docs/formatting/formatting-check.json docs/formatting/previews
+          git commit -m 'Add formatted Practical 2 PDF and visual-review pages'
+          git push origin HEAD:p2-pdf-format-20261027
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: Practical-2-formatted-PDF
+          path: |
+            docs/formatting/EE3600_Practical_2_Task_Sheet_Formatted.pdf
+            docs/formatting/EE3600_Practical_2_Task_Sheet_Formatted.tex
+            docs/formatting/formatting-check.json
+            docs/formatting/previews/
+            docs/formatting/EE3600_Practical_2_Task_Sheet_Formatted.log
+          if-no-files-found: ignore

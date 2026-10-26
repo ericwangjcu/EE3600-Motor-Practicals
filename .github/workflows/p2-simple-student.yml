@@ -1,0 +1,63 @@
+name: Practical 2 simple student workflow checks
+on:
+  push:
+    branches: [p2-simple-task-flow]
+    paths:
+      - '.github/workflows/p2-simple-student.yml'
+      - 'tools/simplify_p2_student.py'
+      - 'tools/adapt_simple_tests.py'
+      - 'js/p2-student-flow.js'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Build the task-sheet student presentation
+        run: |
+          python3 -m pip install beautifulsoup4==4.13.4
+          python3 tools/simplify_p2_student.py
+          python3 tools/adapt_simple_tests.py
+          git diff --check
+          git diff --exit-code 7bec0765e3dc07afcfcbbe8711b409252bc52888 -- index.html firmware
+      - name: Numerical, two-profile and simulated-serial regressions
+        run: node --test tests/*.test.cjs
+      - name: Controller checks and unchanged firmware
+        run: |
+          gcc -std=c11 -Wall -Wextra -Werror -pedantic firmware/practical2/control.c firmware/practical2/test_control.c -lm -o /tmp/p2-controller-tests
+          /tmp/p2-controller-tests
+          python3 firmware/practical2/verify_uf2.py firmware/EE3600_Practical_2_Pico.uf2
+          echo '74c915c9541da3c637880ccb31a300a86ecdf59092494fd6d81171e5844b562b  firmware/EE3600_Practical_2_Pico.uf2' | sha256sum --check
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save --package-lock=false playwright@1.62.0
+          npx playwright install --with-deps chromium
+      - name: Actual Chromium student navigation and synthetic CSV round-trip
+        run: node tests/speed-website-browser.cjs
+      - name: Keep tested pages and evidence on review branch
+        run: |
+          git diff --check
+          git diff --exit-code 7bec0765e3dc07afcfcbbe8711b409252bc52888 -- index.html firmware
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add practical2-control.html docs/practical2-speed-task.html js/p2-speed-study.js tests/pico-interface.test.cjs tests/speed-website-browser.cjs docs/website-speed-validation.md docs/website-speed-evidence
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish tested simple task-sheet UI and two-motor profile evidence'
+            git push origin HEAD:p2-simple-task-flow
+          fi
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: p2-simple-student-website-evidence
+          path: |
+            docs/website-speed-evidence/
+            docs/website-speed-validation.md
+          if-no-files-found: ignore

@@ -6,6 +6,7 @@ on:
       - '.github/workflows/p2-simple-student.yml'
       - 'tools/simplify_p2_student.py'
       - 'tools/adapt_simple_tests.py'
+      - 'tools/p2_simple_hardening.py'
       - 'js/p2-student-flow.js'
   workflow_dispatch:
 permissions:
@@ -26,6 +27,7 @@ jobs:
           python3 -m pip install beautifulsoup4==4.13.4
           python3 tools/simplify_p2_student.py
           python3 tools/adapt_simple_tests.py
+          python3 tools/p2_simple_hardening.py
           git diff --check
           git diff --exit-code 7bec0765e3dc07afcfcbbe8711b409252bc52888 -- index.html firmware
       - name: Numerical, two-profile and simulated-serial regressions
@@ -48,7 +50,7 @@ jobs:
           git diff --exit-code 7bec0765e3dc07afcfcbbe8711b409252bc52888 -- index.html firmware
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add practical2-control.html docs/practical2-speed-task.html js/p2-speed-study.js tests/pico-interface.test.cjs tests/speed-website-browser.cjs docs/website-speed-validation.md docs/website-speed-evidence
+          git add practical2-control.html docs/practical2-speed-task.html js/p2-speed-study.js tests/pico-interface.test.cjs tests/speed-study.test.cjs tests/speed-website-browser.cjs docs/website-speed-validation.md docs/website-speed-evidence
           if ! git diff --cached --quiet; then
             git commit -m 'Publish tested simple task-sheet UI and two-motor profile evidence'
             git push origin HEAD:p2-simple-task-flow

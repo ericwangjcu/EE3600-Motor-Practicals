@@ -97,6 +97,7 @@ async function transportTests(){
  const instrumented=appSource.replace(/\}\)\(\);\s*$/,"globalThis.__test={state,received,connect,disconnect,guarded,startTrial,stop,applyConfig,analyse,refresh};})();");assert.notEqual(instrumented,appSource);
  vm.runInContext(instrumented,ctx);const app=ctx.__test;
  await app.connect();
+ elements.get('motorProfile').value='21.3';
  check('Transport: connect starts with STOP, accepts interleaved pin INFO and never arms',()=>{assert.equal(portOpen,true);assert.equal(sent[0],'STOP');assert.equal(app.state.compatible,true);assert.equal(sent.includes('ARM'),false);assert.ok(sent.includes('HELLO')&&sent.includes('STREAM,P2'));});
  const beforeConversion=sent.length;elements.get('gear').value='4.4';elements.get('p1Gain').value=String(2*Math.PI);elements.get('p1Tau').value='.25';elements.get('convertP1').listeners.click();
  check('P1 UI: conversion preview does not populate model fields, apply gains or send commands',()=>{assert.equal(elements.get('modelK').value,'');assert.equal(Number(elements.get('speedKp').value),0);assert.equal(sent.length,beforeConversion);assert.equal(elements.get('useP1Model').disabled,false);});
@@ -113,6 +114,22 @@ async function transportTests(){
  check('Transport: hidden ZERO cannot send a position command on the speed-only page',()=>{assert.equal(sent.includes('ZERO'),false);assert.ok(app.state.history.length>0);assert.match(elements.get('message').textContent,/position control is disabled/i);});
  for(let i=0;i<30;i++)telemetry();await new Promise(r=>setTimeout(r,5));
  elements.get('speedKp').value='0.0001';elements.get('speedKi').value='0.0002';elements.get('speedKd').value='0';elements.get('speedTf').value='0.02';
+
+ // TWO_MOTOR_FLOW_REGRESSION: synthetic serial device, not physical evidence.
+ elements.get('motorProfile').value='4.4';
+ const armsBeforeMismatch=sent.filter(x=>x==='ARM').length;
+ await assert.rejects(()=>app.startTrial('speed'),/settings do not match/);
+ check('Two motors: stale 21.3 device config cannot arm selected 4.4 profile',()=>assert.equal(sent.filter(x=>x==='ARM').length,armsBeforeMismatch));
+ await app.guarded(app.applyConfig);
+ check('Two motors: selected 4.4 profile sends GEAR=4.4 and CPR=44, not an output CPR',()=>{assert.ok(sent.includes('GEAR,4.4'));assert.equal(app.state.config.gear_ratio,4.4);assert.equal(app.state.config.cpr_motor,44);});
+ for(let i=0;i<30;i++)telemetry();await new Promise(r=>setTimeout(r,5));
+ await app.guarded(()=>app.startTrial('speed'));await new Promise(r=>setTimeout(r,5));
+ check('Two motors: a 4.4 speed trial preserves its own run profile and metadata',()=>{assert.equal(app.state.run.config.gear_ratio,4.4);assert.equal(app.state.run.kit_profile.id,'6V-1360-4.4');assert.equal(app.state.deviceState,'ARMED');});
+ await app.stop('Synthetic profile test completed');await new Promise(r=>setTimeout(r,5));
+ for(let i=0;i<30;i++)telemetry();await new Promise(r=>setTimeout(r,5));
+ elements.get('motorProfile').value='21.3';await app.guarded(app.applyConfig);
+ check('Two motors: applying 21.3 again does not rewrite prior hardware metadata',()=>{assert.equal(app.state.config.gear_ratio,21.3);assert.equal(app.state.run.config.gear_ratio,4.4);});
+ for(let i=0;i<30;i++)telemetry();await new Promise(r=>setTimeout(r,5));
  const start=sent.length;await app.guarded(()=>app.startTrial('speed'));await new Promise(r=>setTimeout(r,5));
  check('Transport: explicit speed run applies mode, duration, gains, reference, then ARM',()=>{const seq=sent.slice(start).filter(x=>x!=='PING'&&x!=='STATUS');assert.equal(seq[0],'MODE,SPEED');assert.ok(seq[1].startsWith('DURATION,'));assert.ok(seq[2].startsWith('PIDSPEED,'));assert.equal(seq[3],'SPEED,1000');assert.equal(seq[4],'ARM');assert.equal(app.state.deviceState,'ARMED');assert.ok(Number.isFinite(app.state.run.arm_time));assert.equal(app.state.run.config.pidspeed.kp,.0001);});
  const beforePing=sent.length;intervals.find(x=>x.ms===200).fn();await new Promise(r=>setTimeout(r,5));

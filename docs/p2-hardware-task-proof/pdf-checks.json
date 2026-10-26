@@ -1,0 +1,59 @@
+{
+  "pages": 8,
+  "source_revision": "coordinator formatted six-page task sheet plus hardware handover",
+  "sha256": "dbd682cda1d1e7832ca2945ba4c596ef5d8a87e2fcc83f859976c064ce85a854",
+  "page_checks": [
+    {
+      "page": 1,
+      "expected_heading_present": true,
+      "out_of_bounds": [],
+      "characters": 2200
+    },
+    {
+      "page": 2,
+      "expected_heading_present": true,
+      "out_of_bounds": [],
+      "characters": 1399
+    },
+    {
+      "page": 3,
+      "expected_heading_present": true,
+      "out_of_bounds": [],
+      "characters": 2251
+    },
+    {
+      "page": 4,
+      "expected_heading_present": true,
+      "out_of_bounds": [],
+      "characters": 2032
+    },
+    {
+      "page": 5,
+      "expected_heading_present": true,
+      "out_of_bounds": [],
+      "characters": 2825
+    },
+    {
+      "page": 6,
+      "expected_heading_present": true,
+      "out_of_bounds": [],
+      "characters": 2952
+    },
+    {
+      "page": 7,
+      "expected_heading_present": true,
+      "out_of_bounds": [],
+      "characters": 2537
+    },
+    {
+      "page": 8,
+      "expected_heading_present": true,
+      "out_of_bounds": [],
+      "characters": 2745
+    }
+  ],
+  "hardware_tested": false,
+  "initial_gain_guidance_retained": true,
+  "hardware_terms_present": true,
+  "overfull_boxes": []
+}

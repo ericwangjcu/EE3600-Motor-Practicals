@@ -1,3 +1,4 @@
+% TABLE-PARAGRAPH-FIX
 % Hardware-connection revision of the coordinator's six-page formatted task sheet.
 % Existing P/PI starting choices, worked example and targets are retained.
 % Build twice with pdflatex. No firmware, controller or website application changes.
@@ -9,6 +10,7 @@
 \usepackage[a4paper,left=18mm,right=18mm,top=20mm,bottom=19mm,headheight=13pt,headsep=9pt,footskip=25pt]{geometry}
 \usepackage{fancyhdr,lastpage}
 \usepackage[hidelinks]{hyperref}
+\urlstyle{same}
 \hypersetup{pdftitle={EE3600 / EE5610 Practical 2: DC Motor Speed Control with P and PI},pdfauthor={EE3600 / EE5610},pdfsubject={Task sheet with Practical 2 motor-driver wiring and startup}}
 \definecolor{ink}{HTML}{233640}
 \definecolor{teal}{HTML}{14696C}
@@ -51,12 +53,12 @@ Website: \href{https://ericwangjcu.github.io/EE3600-Motor-Practicals/practical2-
 
 \sect{1. Carry forward the Practical 1 model}
 Select the same motor used in Practical 1. The two website choices are:
-\begin{tabularx}{\linewidth}{@{}Y p{29mm}p{37mm}@{}}
+\par\noindent\begin{tabularx}{\linewidth}{@{}Y p{29mm}p{37mm}@{}}
 \toprule
 \textbf{Motor selection}&\textbf{Gearbox ratio, $N$}&\textbf{Motor encoder counts/rev}\\\midrule
 6 V / 280 RPM output & 21.3:1 & 44\\
 6 V / 1360 RPM output & 4.4:1 & 44\\\bottomrule
-\end{tabularx}
+\end{tabularx}\par
 Both use the same P2 UF2. The selector changes the gearbox conversion, not your measured model or controller gains.
 
 Use your existing experimental gain $\overline K$, time constant $\overline\tau$ and gearbox ratio $N$. Do not repeat identification, voltage/speed measurements, physical-parameter derivations or P1 model validation.
@@ -70,10 +72,10 @@ G_n(s)=\frac{K}{\tau s+1},\qquad K=\overline K N\frac{60}{2\pi}V_s,\qquad \tau=\
 \]
 \centerline{\small $K$: motor RPM per duty fraction. $\tau$: seconds.}
 The conversion changes the gain, not the time constant. $K$ is the plant gain, not controller gain $K_p$. Keep your own motor/gearbox/load and record the supply and units. Driver losses and nonlinear behaviour are not separately represented by this voltage scaling.
-\begin{tabularx}{\linewidth}{@{}YYYYY@{}}
+\par\noindent\begin{tabularx}{\linewidth}{@{}YYYYY@{}}
 \toprule
 $\overline K$ [rad/s/V]&$\tau$ [s]&$N$&$V_s$ [V]&Converted $K$\\[16pt]\bottomrule
-\end{tabularx}
+\end{tabularx}\par
 \note{\textbf{Website section 1:} select your motor and actual supply, enter your P1 gain and time constant, then choose the agreed target in motor RPM. Select \ui{Use my P1 model}. The model is converted once; no controller gains are applied.}
 Follow the website in order: 1 P1 model $\to$ 2 P only $\to$ 3 Add I $\to$ 4 Targets $\to$ 5 Pico test $\to$ 6 Results. Use \ui{Next/Back} or the numbered sections.
 \textbf{Before the Pico test, complete the new hardware and startup instructions in Sections 5A--5B. P2 motor-power wiring is different from P1.}
@@ -134,22 +136,22 @@ The factor 5 starts integral action slowly relative to the plant. It is a simula
 \newpage
 % PAGE 4 -- same assessment conventions.
 \sub{How the three lecture methods apply}
-\begin{tabularx}{\linewidth}{@{}p{39mm}Y@{}}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{39mm}Y@{}}
 \toprule\textbf{Method}&\textbf{Use in this practical}\\\midrule
 Model-based analysis&Derive P/PI behaviour and explain gain effects.\\
 Computational tuning&Adjust or search gains in simulation. State the settings and criteria, then validate one reviewed candidate.\\
 Ziegler--Nichols&Explain both methods and assess applicability. The ideal model has no positive reaction-curve delay and no finite positive ultimate gain. Use a separate suitable tutor example for numerical practice.\\\bottomrule
-\end{tabularx}
+\end{tabularx}\par
 \textbf{These are not three compulsory hardware exercises.} Do not invent a delay or ultimate gain, or increase physical gain to force sustained oscillation.
 \sect{4. Speed requirements and measurement conventions}
 Use one agreed achievable positive step from rest, with the same target, supply, load and limits throughout. The reported reference kit used 1000 motor RPM at 6 V; this is not a universal target for every kit.
-\begin{tabularx}{\linewidth}{@{}p{32mm}Y@{}}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{32mm}Y@{}}
 \toprule\textbf{Quantity}&\textbf{Requirement}\\\midrule
 Overshoot&$\leq5\%$ of the commanded step, beyond the final target.\\
 10--90\% rise&$\leq0.50$ s. Also report command-to-10\% time to expose startup delay.\\
 Settling&$\leq1.00$ s from the command event; all later assessment samples in band, with $\geq2$ s final in-band dwell.\\
 Final error&Last-2-second mean absolute error $\leq\max(2\%\text{ of target},2q)$. Report signed bias too.\\\bottomrule
-\end{tabularx}
+\end{tabularx}\par
 \sub{Encoder-aware assessment band}
 For $C_m$ decoded counts per motor revolution and the 50 ms speed-measurement window:
 \[
@@ -161,9 +163,9 @@ r_f\pm\max\bigl(0.02|r_f-r_0|,\,2q\bigr).
 \]
 For $C_m=44$, $2q=54.545$ motor RPM. At a 1000 RPM target this is $\pm5.45\%$, \textbf{not strict $\pm2\%$}. State which term governs the band. The ideal simulation comparison reports strict 2\% separately.
 \note{\textbf{Assess against the commanded target.} Measure time from the command, not from the start of motion. Faults, incomplete recordings or insufficient final dwell cannot pass.}
-\begin{tabularx}{\linewidth}{@{}YY@{}}
+\par\noindent\begin{tabularx}{\linewidth}{@{}YY@{}}
 \toprule\textbf{Agreed target: motor RPM}&\textbf{Assessment-band half-width: motor RPM}\\[15pt]\bottomrule
-\end{tabularx}
+\end{tabularx}\par
 
 \newpage
 % PAGE 5 -- NEW: physical wiring, grounded in P1 wiring, P2 firmware and board documentation.
@@ -178,13 +180,13 @@ Switch \textbf{OFF} the bench supply and the driver-board switch, and unplug the
 \item \textbf{Power the board, not the motor directly.} Connect bench supply \textbf{+ to the board POWER +} terminal and bench supply \textbf{-- to POWER -- / GND}, following the board markings. For the two 6 V kits, use a \textbf{6 V supply} unless the tutor explicitly approves a different configuration. Leave the supply and board switch OFF for now.
 \item \textbf{Retain/check the encoder wiring} using the table below. Keep the encoder's low-voltage wiring separate from the motor-power terminals. If wire colours differ, identify the signals with the tutor rather than guessing.
 \end{enumerate}
-\begin{tabularx}{\linewidth}{@{}p{37mm}p{37mm}Y@{}}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{37mm}p{37mm}Y@{}}
 \toprule\textbf{Wire on the class kit}&\textbf{Pico connection}&\textbf{Purpose}\\\midrule
 Yellow&GP26&Encoder A signal\\
 Green&GP27&Encoder B signal\\
 Blue&3V3 (OUT), or board 3V breakout&Encoder supply; not motor supply\\
 Black&GND&Encoder ground, common with Pico/board ground\\\bottomrule
-\end{tabularx}
+\end{tabularx}\par
 {\small GP26 and GP27 are GPIO names, not physical pin numbers. Retain the existing P1 harness; do not substitute GP28 for GP26. The board's header sockets already carry the Motor 1 control signals GP2/GP3 and common ground; no extra motor-control jumpers are required.}
 \warn{\textbf{Do not leave the bench supply connected directly to the motor.} Do not connect either Motor 1 output to supply + or GND, and do not power the motor from Pico 3V3 or a GPIO. The encoder must not receive the 6 V motor supply. USB alone is not the motor-power source for this practical.}
 \textbf{Connection check:} bench supply $\to$ board POWER input; Motor 1 $\to$ red/white motor leads; encoder $\to$ GP26/GP27, 3V3 and GND. The PC connects to the \textbf{Pico USB port} with a data-capable cable in Section 5B.
@@ -242,7 +244,7 @@ Only the separate legacy simulator uses percent duty/output RPM: divide those ga
 \newpage
 % PAGE 8 -- original results, optional simulation and validation qualifications.
 \sect{6. Results and submission}
-\begin{tabularx}{\linewidth}{@{}p{33mm}p{25mm}YYYY@{}}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{33mm}p{25mm}YYYY@{}}
 \toprule
 \textbf{Case}&\textbf{Gains}&\textbf{Over-shoot (\%)}&\textbf{Rise (s)}&\textbf{Settling (s)}&\textbf{Final MAE / bias (RPM)}\\\midrule
 P simulations&&&&&\\[14pt]\midrule
@@ -251,7 +253,7 @@ Initial hardware&&&&&\\[14pt]\midrule
 Final repeat 1&&&&&\\[14pt]\midrule
 Final repeat 2&&&&&\\[14pt]\midrule
 Final repeat 3&&&&&\\[14pt]\bottomrule
-\end{tabularx}
+\end{tabularx}\par
 Submit carried-forward P1 values and the unit conversion, P/PI analysis, simulation/tuning record, new P2 CSVs, speed/reference/duty plots, the comparison table and discussion. \textbf{Do not resubmit P1 identification work.} Preserve all raw timestamps; exclude only explicitly reported pre-command transition frames from assessment, never startup delay or failed responses.
 
 Explain P's offset, how I supplies steady drive, what increasing I changed, model/hardware differences, whether each final repeat passed, the assessment band, and why the two Ziegler--Nichols methods do not directly fit this ideal model.

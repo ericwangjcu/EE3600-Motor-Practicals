@@ -1,47 +1,51 @@
-# Practical 2: Pico motor control
+# Practical 2: speed control with P and PI
 
-Use the [task sheet](EE3600_Practical_2.pdf) with the [motor control page](../practical2-control.html). Speed control is required. Position control is optional. Reuse your completed Practical 1 model, speed curve, encoder calibration and load arrangement.
+Use the [updated task sheet](practical2-speed-task.html) and [Pico speed-control page](../practical2-control.html). The task sheet has a **Print / save as PDF** button. Reuse the completed Practical 1 model and kit; do not repeat identification. Position is optional **in simulation only**. The student page hides position controls and blocks position-actuation commands.
 
-## Load and connect
+## Student sequence
 
-With motor power off, hold BOOTSEL while connecting the original RP2040 Pico by USB. Copy [EE3600_Practical_2_Pico.uf2](../firmware/EE3600_Practical_2_Pico.uf2) to RPI-RP2. This is the existing Practical 2 firmware 1.0.0, not a Pico 2/RP2350 image.
+1. **Connect Pico** and check actual kit settings; **Apply configuration** while disarmed.
+2. Carry forward Kbar and tau: **Convert P1 model → Use converted model**.
+3. Under **Compare P, then add I**, select **Use model fields for simulation**. Choose a base Kp and compare 0.5×, 1× and 2× P with I = D = 0. Explain the offset.
+4. Keep P fixed, choose a base Ki and compare the three I values. Save the simulation CSV. Check the full response and requested duty; D is not required.
+5. Review the candidate in a simulation that includes the agreed actuator limits and implementation effects. Enter the reviewed gains in **Speed control**; no gains are transferred automatically.
+6. **Arm & run speed trial → Analyse response → Save CSV**. Stop before changing gains. Refine one setting at a time.
+7. Freeze successful gains, record three fresh repeats, and load/export/re-import the saved CSVs. Report each repeat and the worst result.
 
-The application uses Kitronik 5331 Motor 1, GP3/GP2 motor drive and GP26/GP27 encoder inputs. Kitronik's [driver source](https://github.com/KitronikLtd/Kitronik-Pico-Motor-Driver-Board-MicroPython/blob/main/PicoMotorDriver.py) specifies these Motor 1 pins. Retain the established wiring and power limits for the teaching kit.
+## Existing firmware and settings
 
-Open the motor control page in desktop Chrome or Edge and select **Connect Pico**. Close Thonny and any other application using the port. The page checks for the `EE3600_P2` firmware identity before enabling a trial. The Practical 1 encoder-only UF2 cannot run this control page.
+Use the unchanged [EE3600_Practical_2_Pico.uf2](../firmware/EE3600_Practical_2_Pico.uf2), identity `EE3600_P2 1.0.0`, for the original RP2040 Pico. Use the existing BOOTSEL loading procedure with motor power off. The established driver is Kitronik 5331 Motor 1 (GP3/GP2); encoder A/B are GP26/GP27. No firmware changes or new student programs are required.
 
-## Apply the kit settings
+Use desktop Chrome/Edge and close other applications holding the serial port. The page checks firmware identity before enabling trials; connection alone never arms the motor. Settings reset on Pico reboot. Device readback can replace the page defaults, so check the actual supply again before applying settings.
 
-In **Hardware setup**, enter the actual supply voltage, allowed duty limit, encoder counts per motor revolution and gearbox ratio. Select **Apply configuration** while disarmed. Settings reset when the Pico reboots.
+The speed controller uses motor-shaft RPM and **fractional duty**. For the demonstrated encoder use 44 decoded counts per motor revolution and a separate confirmed gearbox ratio. Do not enter the approximately 937 output counts in the motor-count field. The passing reported speed tests used N = 21.3; a later estimate of 21.6 does not retrospectively change their metadata.
 
-The supplied defaults are 44 quadrature counts per motor revolution and a 21.3:1 gearbox; use 4.4:1 only for that confirmed motor variant. The displayed motor RPM and output RPM differ by this ratio. The supply entry is metadata used for a nominal voltage/duty ceiling; it is not a voltage or current measurement.
+The user-reported bench supply is 6 V, with a 100% maximum duty ceiling approved for that particular unloaded kit. This is not a general limit for every kit. The page starts at a lower entered limit and requires explicit application of tutor-approved settings. The supply entry is metadata, not a measured voltage/current. A supply's 3 A maximum rating is not a measured current or adjustable current-limit setting. No minimum-duty clamp, starting boost or feedforward is introduced.
 
-Use **Optional diagnostics** for a brief direction check if needed. Positive duty must correspond to positive measured motor speed before closed-loop operation.
+A brief tutor direction check, if required, is available under **Tutor diagnostics**; it is not another P1 experiment. Positive duty must produce positive measured speed. Do not grip a moving shaft or bypass faults.
 
-## Bring forward the Practical 1 model
+## Model and gain units
 
-For a saved output-shaft model in rad/s per volt, `G_P1(s) = Kbar / (tau*s + 1)`, the motor-speed model used by this page has gain
+The P1 model `Kbar/(tau*s+1)` maps terminal voltage to output rad/s. Under the nominal PWM approximation, convert using:
 
-`K_motor = Kbar * N * 60/(2*pi) * Vs` in motor RPM per fractional duty.
+`K_motor = Kbar * N * 60/(2*pi) * Vs` in motor RPM per duty fraction.
 
-The measured `tau` stays the same. Enter the saved model and select **Convert P1 model**, then **Use converted model**. This copies model values only. It does not select, transmit or apply controller gains.
+Tau stays unchanged. The new P/PI comparison panel uses these same units. Its exact continuous-model predictions include the PI zero but no friction, actuator limits, sampled controller or encoder quantisation. It flags demand exceeding the entered ceiling; that flag is not a simulated saturating response.
 
-Choose an applicable tuning method from the lecture/task sheet. Enter parallel `Kp`, `Ki`, `Kd`; the integral coefficient is not `Ti`. For standard-form values, convert with `Ki = Kp/Ti` and `Kd = Kp*Td`. The controller output uses duty fraction, not percent. A PI controller uses `Kd = 0`.
+The [separate legacy limited simulator](../practical2.html) uses **percent duty / gearbox-output RPM**, a fixed actuator lag and different sampling/filtering. Divide its controller gains by **100 × N** to obtain fractional-duty/motor-RPM gains. Its extra actuator lag means it is not the ideal first-order P example. Check the implemented response after conversion.
 
-## Run and compare
+Enter parallel gains: Kp in duty/RPM; Ki in duty/(RPM*s); Kd = 0 for the required PI task. Ki is not Ti. The optional analytical Tc helper only displays starting values; it never fills or applies gains.
 
-1. Choose an achievable motor-speed reference from the Practical 1 speed curve, leaving room for duty adjustment.
-2. Enter the gains under **Speed control**. Retain the agreed filter and duty limits.
-3. Select **Arm & run speed trial**. The Pico executes the 100 Hz loop.
-4. Allow the trial to finish, or select **STOP**. Use **Analyse response**, then **Save CSV** before the next run.
-5. Compare the same reference step with initial and refined gains. Record overshoot, 10-90% rise, settling, final error and duty clipping.
+## Assessment and raw-data preservation
 
-The final two seconds of armed data supply final error and settling dwell. A fault, missing telemetry or insufficient dwell cannot count as a successful measured trial. The device removes drive on trial expiry, lost host heartbeat or a latched fault. STOP permits mechanical coasting.
+Use the task sheet's target-centred overshoot, 10–90% rise, settling and final MAE definitions. With 44 counts/rev and a 50 ms speed window, the two-quantum measurement floor is 54.545 motor RPM. At 1000 RPM that gives a ±5.45% settling band, not strict ±2%. The new ideal simulation comparison reports strict 2% target settling separately.
 
-For optional position control, zero only while stopped and enter output-shaft degrees. This is encoder-derived relative position, not an absolute homing sensor. The lecture's position targets refer to the simulated model. The page's optional position comparison is provisional hardware guidance; report the measured response and encoder-aware band separately.
+All raw CSV frames remain intact. The website may exclude a pre-command ARMED/reference transition frame only when it precedes the actual device command by no more than one 10 ms control tick. It reports the excluded count without moving the command timestamp or removing startup delay. Larger timing discrepancies remain errors. Imported recordings retain their original completion/fault status; importing cannot turn a disconnected or incomplete run into a successful test.
 
-## Simulation units
+STOP, expiry and heartbeat protections are unchanged. STOP removes drive but allows coasting. Save each recording before a new run. A fault, insufficient final dwell, large telemetry gaps or incomplete communication cannot be a pass.
 
-The [separate simulation](../practical2.html) uses percent duty and gearbox-output RPM. For the same continuous controller, divide its gains by `100*N` to obtain duty-fraction/motor-RPM gains. Include the actual sampling, filter, actuator limits and measurement lag when validating a hardware design.
+## Validation scope
 
-See [firmware/practical2](../firmware/practical2/) for source and protocol, and [validation status](validation.md) for the checks performed.
+See the [executed website checks](website-speed-validation.md). These include real Chromium UI tests and a deliberately synthetic CSV export/re-import, not a physical motor experiment. The coordinator's earlier numerical speed pass is a separate source of evidence.
+
+Still pending: a trial through the revised website on the real Pico, round-trip comparison using the original physical records, and physical USB removal. A heartbeat test does not replace the unplug test. Use the [local Codex completion brief](CODEX_SPEED_WEBSITE_TEST.md) for those checks. Do not perform physical position tests.

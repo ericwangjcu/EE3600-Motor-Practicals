@@ -1,0 +1,20 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const html=fs.readFileSync('practical2-control.html','utf8'),ctx=vm.createContext({});
+vm.runInContext(html.match(/<script id="p2-core">([\s\S]*?)<\/script>/)[1],ctx);const C=ctx.Practical2Core;
+const sim=fs.readFileSync('practical2-ppi.html','utf8');const simScript=[...sim.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1];vm.runInContext(simScript,ctx);const S=ctx.PPISimulation;
+const close=(a,b,tol=1e-5)=>assert.ok(Math.abs(a-b)<tol,`${a} != ${b}`);
+function rows(){return Array.from({length:501},(_,i)=>({t_unwrapped:1000+i*20,y:1000*(1-Math.exp(-i*.02/.2))}));}
+test('one preceding control sample is excluded from assessment, not deleted',()=>{const data=rows();data.unshift({t_unwrapped:995,y:0});const before=JSON.stringify(data),selected=C.postCommandSamples(data,1000);assert.equal(selected.excluded_count,1);assert.equal(selected.samples.length,501);assert.equal(JSON.stringify(data),before);const m=C.metrics(selected.samples.map(s=>({t:s.t_unwrapped/1000,y:s.y})),0,1000,20,2,1);close(m.rise_s,Math.log(9)*.2,.002);});
+test('do not disguise a large timestamp discrepancy as transition noise',()=>{assert.throws(()=>C.postCommandSamples([{t_unwrapped:800,y:0},...rows()],1000));});
+test('do not move time zero to motion or discard early stationary post-command data',()=>{const data=rows();for(let i=0;i<25;i++)data[i].y=0;const s=C.postCommandSamples(data,1000);assert.equal(s.samples[0].t_unwrapped,1000);assert.equal(s.samples[24].y,0);});
+test('raw duplicate timestamps remain invalid',()=>{const data=rows();data[5].t_unwrapped=data[4].t_unwrapped;assert.throws(()=>C.postCommandSamples(data,1000));});
+test('missing near-command telemetry remains invalid',()=>{assert.throws(()=>C.postCommandSamples(rows().slice(6),1000));});
+test('strict metrics still reject unselected pre-command samples',()=>{assert.throws(()=>C.metrics([{t:.995,y:0},...rows().map(s=>({t:s.t_unwrapped/1000,y:s.y}))],0,1000,20,2,1));});
+test('P/PI page retires position hardware and leaves firmware guards intact',()=>{assert.match(html,/<details[^>]*hidden[^>]*id="optionalPosition"|<details[^>]*id="optionalPosition"[^>]*hidden/);assert.match(html,/if\(kind==='position'\)throw Error/);assert.match(html,/completed:imported.metadata.completed===true/);assert.match(html,/finish_reason:imported.metadata.finish_reason\|\|/);assert.match(html,/Telemetry gap greater than 100 ms/);assert.match(html,/fault or incomplete communication/);});
+const base={K:6000,tau:.051,target:1000,kp:1/6000,ki:0,duration:10,limit:100,cpr:44,implementation:'ideal',band:'strict'};
+test('ideal P predictions: 50%, one-third and 20% offset; no overshoot',()=>{for(const L of [1,2,4]){const r=S.runStudy({...base,kp:L/base.K});close(r.rows.at(-1).y,1000*L/(1+L),.001);close(r.metrics.overshoot_pct,0);assert.equal(r.metrics.settling_s,null);}});
+test('nominal cancellation PI removes offset and meets its first-order timing',()=>{const tc=.2,r=S.runStudy({...base,kp:base.tau/(base.K*tc),ki:1/(base.K*tc)});close(r.rows.at(-1).y,1000,.001);close(r.metrics.rise_s,Math.log(9)*tc,.002);close(r.metrics.settling_s,Math.log(50)*tc,.011);close(r.metrics.overshoot_pct,0,.001);});
+test('sampled saturated study respects the entered ceiling',()=>{const r=S.runStudy({...base,kp:.1,ki:.1,implementation:'limited',limit:30});assert.ok(r.rows.every(x=>Math.abs(x.u)<=30+1e-9));assert.ok(r.rows.every(x=>Number.isFinite(x.y)));});
+test('encoder-aware band is labelled and affects assessment, not plant output',()=>{const a=S.runStudy({...base,band:'strict'}),b=S.runStudy({...base,band:'hardware'});close(a.rows.at(-1).y,b.rows.at(-1).y);close(a.metrics.band,20);close(b.metrics.band,54.54545454545);});
+test('simulator has no serial connection and uses native hardware gain units',()=>{assert.doesNotMatch(sim,/navigator\.serial|requestPort\(/);assert.match(sim,/motor RPM and fractional duty/);assert.match(sim,/SIMULATION ONLY/);});

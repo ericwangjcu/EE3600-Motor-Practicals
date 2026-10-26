@@ -1,0 +1,113 @@
+name: Practical 2 P-PI release checks
+on:
+  push:
+    branches: [practical2-p-pi-speed-20261026]
+    paths:
+      - '.github/workflows/practical2-ppi-validation.yml'
+      - 'tools/**'
+      - 'tests/**'
+      - 'practical2-ppi.html'
+      - 'docs/practical2-student.html'
+      - 'CODEX_TEST_P_PI.md'
+permissions:
+  contents: read
+jobs:
+  validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: practical2-p-pi-speed-20261026
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare dependencies
+        run: |
+          python -m pip install beautifulsoup4 pymupdf
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+      - name: Build scoped website revision
+        run: |
+          mkdir -p reports/ppi
+          python tools/revise_practical2.py
+          python tools/finalise_ppi.py
+      - name: JavaScript regression tests
+        run: |
+          set -o pipefail
+          node --test tests/*.test.cjs tests/ppi.test.cjs 2>&1 | tee reports/ppi/javascript-tests.txt
+      - name: Unchanged firmware host checks and UF2 verification
+        run: |
+          set -o pipefail
+          gcc -std=c11 -Wall -Wextra -Werror -pedantic firmware/practical2/control.c firmware/practical2/test_control.c -lm -o /tmp/p2-control-test
+          /tmp/p2-control-test | tee reports/ppi/firmware-host-tests.txt
+          python firmware/practical2/verify_uf2.py firmware/EE3600_Practical_2_Pico.uf2 | tee reports/ppi/uf2-check.txt
+      - name: Chromium workflow and synthetic CSV round-trip checks
+        run: |
+          set -o pipefail
+          node tools/ppi_browser_check.cjs 2>&1 | tee reports/ppi/browser-tests.txt
+      - name: Render-check document, create report and package
+        run: |
+          python - <<'PY'
+          import os, json, hashlib, zipfile
+          from pathlib import Path
+          import fitz
+          out=Path('reports/ppi')
+          doc=fitz.open('docs/EE3600_Practical_2.pdf')
+          print('PDF pages:',len(doc))
+          assert len(doc)==3, f'Expected three pages; found {len(doc)}'
+          for i,page in enumerate(doc):
+              page.get_pixmap(matrix=fitz.Matrix(1.4,1.4)).save(out/f'task-page-{i+1}.png')
+              assert page.get_text().strip(), 'Blank PDF page'
+          checks=json.loads((out/'browser-checks.json').read_text())
+          report='# Practical 2 P/PI release verification\n\n'
+          report+='## Executed software checks\n\n'
+          report+='- JavaScript model/interface and P/PI transition tests passed; see `reports/ppi/javascript-tests.txt`.\n'
+          report+='- Unchanged portable C controller/protocol host checks passed; see `firmware-host-tests.txt`.\n'
+          report+='- RP2040 UF2 validator and original binary hash passed.\n'
+          report+='- Chromium UI checks passed with explicitly synthetic data only.\n'
+          report+='- Task sheet generated as three A4 PDF pages; text checked and page renderings saved. No claim of manual visual inspection.\n\n'
+          report+='### Browser cases\n\n'+'\n'.join('- '+c for c in checks['checks'])+'\n\n'
+          report+='## Physical evidence boundary\n\nNo Pico, motor or USB device was connected to this CI runner. No real motor trials, real Web Serial pairing, or physical USB-removal check was performed here. The instructor previously reported three numerical speed passes at 6 V/1000 motor RPM on one unloaded kit. That is prior reported evidence, not a new measurement by this release. The two reported position candidates failed; position is now simulation-only. Native local browser/motor operation and physical USB removal remain pending.\n\n'
+          report+='## Changes\n\nP/PI student sequence; matching simulator/hardware units; hidden and guarded retired position UI; raw-preserving bounded pre-command sample selection; CSV completion/failure provenance retained. The strict metric formulas, thresholds, firmware, UF2, Practical 1 and lecture slides are unchanged.\n\n'
+          report+='## Provenance\n\nSource revision: `'+os.environ['GITHUB_SHA']+'`. Generated files are committed on the release branch only after successful checks.\n'
+          report+='UF2 SHA-256: `'+hashlib.sha256(Path('firmware/EE3600_Practical_2_Pico.uf2').read_bytes()).hexdigest()+'`.\n'
+          Path('docs/ppi-validation-report.md').write_text(report)
+          Path('README_P_PI.txt').write_text('PRACTICAL 2 — SPEED CONTROL WITH P AND PI\n\nOpen practical2-control.html for the Pico and practical2-ppi.html for simulation. Prefer the published HTTPS website; alternatively serve this extracted folder on localhost (python -m http.server 8000).\n\nCurrent task sheet: docs/EE3600_Practical_2.pdf. Editable source: docs/practical2-student.html.\n\nReuse the existing Practical 1 model. P-only comparison is in simulation; reviewed P/PI gains are tested on the motor. Position is optional simulation only. Firmware EE3600_P2 1.0.0 is unchanged.\n\nRead docs/ppi-validation-report.md for executed software checks and pending physical checks. These software checks do not establish end-to-end motor validation. See CODEX_TEST_P_PI.md for the remaining local-PC test and report.\n')
+          Path('downloads').mkdir(exist_ok=True)
+          with zipfile.ZipFile('downloads/EE3600_Practical_2_P_PI_Package.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for name in ['README_P_PI.txt','CODEX_TEST_P_PI.md','index.html','practical2-control.html','practical2-ppi.html','practical2.html']:
+                  p=Path(name)
+                  if p.exists():z.write(p,'EE3600_Practical_2_P_PI/'+name)
+              for folder in ['js','firmware','tests','tools','reports/ppi']:
+                  for p in Path(folder).rglob('*'):
+                      if p.is_file() and '__pycache__' not in str(p):z.write(p,'EE3600_Practical_2_P_PI/'+str(p))
+              for name in ['EE3600_Practical_2.pdf','practical2-student.html','practical2-hardware.md','ppi-validation-report.md']:
+                  p=Path('docs')/name;z.write(p,'EE3600_Practical_2_P_PI/'+str(p))
+          print(report)
+          PY
+      - name: Save generated website, PDF and evidence on release branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add practical2-control.html practical2.html js/practical2-core.js tests/pico-interface.test.cjs docs/practical2-hardware.md docs/EE3600_Practical_2.pdf docs/ppi-validation-report.md README_P_PI.txt reports/ppi downloads/EE3600_Practical_2_P_PI_Package.zip
+          if ! git diff --cached --quiet; then
+            git commit -m 'Build checked P/PI speed-control website, task sheet and package'
+            git push origin HEAD:practical2-p-pi-speed-20261026
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: practical2-ppi-evidence
+          path: |
+            reports/ppi/
+            docs/EE3600_Practical_2.pdf
+            docs/practical2-student.html
+            downloads/EE3600_Practical_2_P_PI_Package.zip
+          if-no-files-found: warn

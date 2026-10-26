@@ -1,0 +1,88 @@
+name: Build formatted Practical 2 PDF
+on:
+  push:
+    branches: [p2-formatted-pdf]
+    paths:
+      - '.github/workflows/p2-formatted-pdf.yml'
+      - 'docs/formatting/EE3600_Practical_2_Task_Sheet_Formatted.tex'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install isolated compiler and PDF inspection
+        run: |
+          mkdir -p /tmp/p2-tex
+          curl -fL --connect-timeout 15 --max-time 90 'https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.17.0/tectonic-0.17.0-x86_64-unknown-linux-musl.tar.gz' -o /tmp/p2-tex/tectonic.tar.gz
+          echo '8533d07f9ccbd7a65824b9e0459041bca34af1eb33daba48f59215593753a3b7  /tmp/p2-tex/tectonic.tar.gz' | sha256sum --check
+          tar -xzf /tmp/p2-tex/tectonic.tar.gz -C /tmp/p2-tex
+          python3 -m pip install --user pymupdf
+      - name: Typeset and check layout
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess, fitz, json, re
+          folder=Path('docs/formatting')
+          src=folder/'EE3600_Practical_2_Task_Sheet_Formatted.tex'
+          t=src.read_text()
+          old=r'''T_P(s)=\frac{KK_p}{\tau s+1+KK_p},\qquad
+          \tau_{\mathrm{cl}}=\frac{\tau}{1+KK_p},\qquad
+          \frac{e_{\mathrm{ss}}}{r}=\frac{1}{1+KK_p}.'''
+          new=r'''\begin{gathered}
+          T_P(s)=\frac{KK_p}{\tau s+1+KK_p},\qquad
+          \tau_{\mathrm{cl}}=\frac{\tau}{1+KK_p},\\[4pt]
+          n_\infty=\frac{rKK_p}{1+KK_p},\qquad
+          \frac{e_{\mathrm{ss}}}{r}=\frac{1}{1+KK_p}.
+          \end{gathered}'''
+          if old in t:
+              t=t.replace(old,new)
+          src.write_text(t)
+          def build():
+              subprocess.run(['/tmp/p2-tex/tectonic','--keep-logs','--keep-intermediates',str(src)],check=True,timeout=180)
+              return fitz.open(src.with_suffix('.pdf'))
+          doc=build()
+          if len(doc)>5:
+              doc.close()
+              t=t.replace(r'\fontsize{10.5}{12.6}',r'\fontsize{10.3}{12.2}').replace(r'\setlength{\parskip}{4pt}',r'\setlength{\parskip}{3pt}').replace(r'itemsep=2.2pt',r'itemsep=1.3pt')
+              t=t.replace(r'\setlength{\abovedisplayskip}{6pt}',r'\setlength{\abovedisplayskip}{4pt}').replace(r'\setlength{\belowdisplayskip}{6pt}',r'\setlength{\belowdisplayskip}{4pt}')
+              src.write_text(t)
+              doc=build()
+          previews=folder/'previews'
+          previews.mkdir(exist_ok=True)
+          report={'pages':len(doc),'page_details':[],'scope':'Typography and layout of coordinator-supplied Codex revision. Website and firmware unchanged.'}
+          for n,p in enumerate(doc):
+              p.get_pixmap(matrix=fitz.Matrix(1.6,1.6)).save(previews/f'page-{n+1}.png')
+              spans=[s for b in p.get_text('dict')['blocks'] if 'lines' in b for line in b['lines'] for s in line['spans']]
+              report['page_details'].append({'page':n+1,'words':len(p.get_text('words')),'fonts':sorted(set(s['font'] for s in spans)), 'first_lines':p.get_text().splitlines()[:10], 'body_bottom':max((s['bbox'][3] for s in spans if 50<s['bbox'][1]<790),default=0)})
+              assert all(s['bbox'][0]>=18 and s['bbox'][2]<=p.rect.width-18 for s in spans),f'Horizontal overflow on page {n+1}'
+          text=re.sub(r'\s+',' ',' '.join(p.get_text() for p in doc))
+          for phrase in ['Choose an initial P gain','Choose an initial I gain, then refine','0.00008396','0.0003292','0.255','21.3:1','4.4:1','three fresh repeats','No position hardware trial is required.']:
+              assert phrase in text,phrase
+          log=src.with_suffix('.log').read_text(errors='replace')
+          report['overfull_log_lines']=[line for line in log.splitlines() if 'Overfull' in line]
+          report['pdf_bytes']=src.with_suffix('.pdf').stat().st_size
+          (folder/'formatting-check.json').write_text(json.dumps(report,indent=2)+'\n')
+          print(json.dumps(report,indent=2))
+          PY
+      - name: Store the PDF on the document branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/formatting/EE3600_Practical_2_Task_Sheet_Formatted.tex docs/formatting/EE3600_Practical_2_Task_Sheet_Formatted.pdf docs/formatting/formatting-check.json docs/formatting/previews
+          if ! git diff --cached --quiet; then
+            git commit -m 'Add formatted task sheet PDF and page previews'
+            git push origin HEAD:p2-formatted-pdf
+          fi
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: Practical-2-formatted-PDF
+          path: |
+            docs/formatting/EE3600_Practical_2_Task_Sheet_Formatted.pdf
+            docs/formatting/EE3600_Practical_2_Task_Sheet_Formatted.tex
+            docs/formatting/formatting-check.json
+            docs/formatting/previews/
+            docs/formatting/EE3600_Practical_2_Task_Sheet_Formatted.log

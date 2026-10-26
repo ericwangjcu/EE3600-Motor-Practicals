@@ -1,0 +1,65 @@
+name: Practical 2 P and PI website checks
+on:
+  push:
+    branches: [p2-p-pi-speed-website]
+    paths:
+      - '.github/workflows/p2-speed-revision.yml'
+      - 'tools/**'
+      - 'tests/**'
+      - 'js/p2-speed-study.js'
+      - 'docs/practical2-speed-task.html'
+permissions:
+  contents: write
+concurrency:
+  group: p2-speed-website-revision
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Apply checked, scoped page revision
+        run: |
+          python3 tools/revise_p2_speed.py
+          python3 tools/update_speed_contracts.py
+          git diff --check
+          git diff --exit-code 9ce0360073de23670e2408e8e4b2bd6fa0f2b882 -- index.html firmware
+      - name: JavaScript and simulated-serial regressions
+        run: node --test tests/*.test.cjs
+      - name: Portable controller checks and unchanged UF2
+        run: |
+          gcc -std=c11 -Wall -Wextra -Werror -pedantic firmware/practical2/control.c firmware/practical2/test_control.c -lm -o /tmp/p2-control-tests
+          /tmp/p2-control-tests
+          python3 firmware/practical2/verify_uf2.py firmware/EE3600_Practical_2_Pico.uf2
+          echo '74c915c9541da3c637880ccb31a300a86ecdf59092494fd6d81171e5844b562b  firmware/EE3600_Practical_2_Pico.uf2' | sha256sum --check
+      - name: Install official Playwright test runtime
+        run: |
+          npm install --no-save --package-lock=false playwright@1.62.0
+          npx playwright install --with-deps chromium
+      - name: Browser workflow and synthetic CSV round-trip
+        run: node tests/speed-website-browser.cjs
+      - name: Preserve verified generated pages on this review branch
+        run: |
+          git diff --check
+          git diff --exit-code 9ce0360073de23670e2408e8e4b2bd6fa0f2b882 -- index.html firmware
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add practical2-control.html practical2.html tests/pico-interface.test.cjs docs/website-speed-validation.md docs/website-speed-evidence
+          if ! git diff --cached --quiet; then
+            git commit -m 'Apply verified P/PI speed website and preserve browser test evidence'
+            git push origin HEAD:p2-p-pi-speed-website
+          fi
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: practical2-speed-website-evidence
+          path: |
+            docs/website-speed-evidence/
+            docs/website-speed-validation.md
+          if-no-files-found: ignore

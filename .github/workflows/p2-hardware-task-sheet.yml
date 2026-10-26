@@ -19,9 +19,21 @@ jobs:
       - name: Install PDF build and inspection tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install --no-install-recommends -y texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended poppler-utils python3-venv
+          sudo apt-get install --no-install-recommends -y texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended poppler-utils python3-venv > /tmp/p2-tool-install.log
           python3 -m venv /tmp/p2-pdf-env
           /tmp/p2-pdf-env/bin/pip -q install pymupdf
+      - name: Isolate full-width tables from surrounding paragraphs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('docs/EE3600_Practical_2_Task_Sheet_Hardware_Updated.tex')
+          t=p.read_text()
+          if '% TABLE-PARAGRAPH-FIX' not in t:
+              t=t.replace(r'\begin{tabularx}',r'\par\noindent\begin{tabularx}')
+              t=t.replace(r'\end{tabularx}',r'\end{tabularx}\par')
+              t=t.replace(r'\usepackage[hidelinks]{hyperref}',r'\usepackage[hidelinks]{hyperref}'+'\n'+r'\urlstyle{same}')
+              p.write_text('% TABLE-PARAGRAPH-FIX\n'+t)
+          PY
       - name: Typeset task sheet twice
         working-directory: docs
         run: |
@@ -33,7 +45,7 @@ jobs:
         run: |
           /tmp/p2-pdf-env/bin/python - <<'PY'
           from pathlib import Path
-          import fitz, json, hashlib, re
+          import pymupdf as fitz, json, hashlib, re
           file=Path('docs/EE3600_Practical_2_Task_Sheet_Hardware_Updated.pdf')
           proof=Path('docs/p2-hardware-task-proof'); proof.mkdir(exist_ok=True)
           doc=fitz.open(file)
@@ -69,7 +81,7 @@ jobs:
           git diff --exit-code 33369eb67686f62f5056e90f2dddc371987705fa -- firmware practical2-control.html js index.html
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/EE3600_Practical_2_Task_Sheet_Hardware_Updated.pdf docs/p2-hardware-task-proof
+          git add docs/EE3600_Practical_2_Task_Sheet_Hardware_Updated.tex docs/EE3600_Practical_2_Task_Sheet_Hardware_Updated.pdf docs/p2-hardware-task-proof
           if ! git diff --cached --quiet; then
             git commit -m 'Add checked eight-page Practical 2 PDF with wiring and startup instructions'
             git push origin HEAD:p2-task-sheet-hardware-connections
@@ -82,6 +94,4 @@ jobs:
             docs/EE3600_Practical_2_Task_Sheet_Hardware_Updated.pdf
             docs/EE3600_Practical_2_Task_Sheet_Hardware_Updated.tex
             docs/p2-hardware-task-proof/
-            /tmp/p2-pass-1.log
-            /tmp/p2-pass-2.log
           if-no-files-found: warn

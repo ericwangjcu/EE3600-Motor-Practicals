@@ -1,0 +1,20 @@
+{
+  "created_utc": "2026-10-26T13:41:29.761Z",
+  "scope": "Automated Chromium UI with synthetic records only; no Pico or physical motor",
+  "checks": [
+    "Disconnected page: zero entered gains, no arming and no visible position controls",
+    "P1 conversion and P/PI comparisons leave hardware gains unchanged",
+    "Simulation CSV is explicitly labelled and contains the compared traces",
+    "Actual Chromium import, assessment, CSV export and re-import agree for synthetic data; raw pre-command frame retained",
+    "Importing a disconnected run does not erase its incomplete status",
+    "Incomplete original metadata cannot be promoted into a completed validation",
+    "Narrow viewport has no page-level horizontal overflow",
+    "Student-facing relative links, firmware and task sheet resolve",
+    "Task sheet renders and pages have no uncaught JavaScript errors"
+  ],
+  "passed": 9,
+  "hardware_tested": false,
+  "physical_browser_trial": "PENDING",
+  "real_csv_replay": "PENDING: raw bench files not available to this runner",
+  "physical_usb_unplug": "PENDING"
+}

@@ -67,7 +67,7 @@ check('Site: gain-unit differences and the 100 N factor are explicit on both rou
  for(const page of [html,sim]){assert.match(page,/100 × N/);assert.match(page,/fractional duty/);assert.match(page,/percent duty/);assert.match(page,/No gains (?:are transferred|transfer) automatically/);}
 });
 check('Site: hardware downloads use the published Practical 2 paths',()=>{
- for(const link of ['firmware/EE3600_Practical_2_Pico.uf2','docs/EE3600_Practical_2.pdf','docs/practical2-hardware.md'])assert.ok(html.includes('href="'+link+'"'));
+ for(const link of ['firmware/EE3600_Practical_2_Pico.uf2','docs/practical2-speed-task.html','docs/practical2-hardware.md'])assert.ok(html.includes('href="'+link+'"'));
 });
 
 // Exercise the actual browser app using a small DOM and newline-serial simulator.
@@ -103,14 +103,14 @@ async function transportTests(){
  elements.get('useP1Model').listeners.click();
  check('P1 UI: explicit Use converted model copies only K/tau using active device N/Vs',()=>{close(Number(elements.get('modelK').value),11502);close(Number(elements.get('modelTau').value),.25);assert.equal(Number(elements.get('speedKp').value),0);assert.equal(Number(elements.get('positionKp').value),0);assert.equal(sent.length,beforeConversion);});
  elements.get('suggestBtn').listeners.click();
- check('P1 UI: analytic position conversion uses the same active gear, ignoring unapplied edits',()=>{const q=Number(elements.get('suggestions').innerHTML.match(/q = ([\d.eE+-]+)/)[1]);close(q,6/21.3,1e-5);assert.equal(sent.length,beforeConversion);});
+ check('P1 UI: optional speed PI helper changes no gains or motor commands',()=>{assert.match(elements.get('suggestions').textContent,/Optional analytical PI starting values/);assert.equal(Number(elements.get('speedKp').value),0);assert.equal(sent.length,beforeConversion);});
  elements.get('gear').value='21.3';
  for(let i=0;i<30;i++)telemetry();await new Promise(r=>setTimeout(r,5));
  await app.guarded(app.applyConfig);
  check('Transport: configuration is acknowledged/read back and old-coordinate history cleared',()=>{assert.ok(sent.includes('SUPPLY,9'));assert.ok(sent.includes('CPR,44'));assert.equal(app.state.config.gear_ratio,21.3);assert.equal(sent.includes('ARM'),false);assert.equal(app.state.history.length,0);});
  for(let i=0;i<30;i++)telemetry();await new Promise(r=>setTimeout(r,5));
  elements.get('zeroBtn').listeners.click();await new Promise(r=>setTimeout(r,5));
- check('Transport: ZERO clears old-angle history before another position baseline',()=>{assert.equal(sent.at(-1),'ZERO');assert.equal(app.state.history.length,0);});
+ check('Transport: hidden ZERO cannot send a position command on the speed-only page',()=>{assert.equal(sent.includes('ZERO'),false);assert.ok(app.state.history.length>0);assert.match(elements.get('message').textContent,/position control is disabled/i);});
  for(let i=0;i<30;i++)telemetry();await new Promise(r=>setTimeout(r,5));
  elements.get('speedKp').value='0.0001';elements.get('speedKi').value='0.0002';elements.get('speedKd').value='0';elements.get('speedTf').value='0.02';
  const start=sent.length;await app.guarded(()=>app.startTrial('speed'));await new Promise(r=>setTimeout(r,5));

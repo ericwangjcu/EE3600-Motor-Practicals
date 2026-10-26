@@ -1,0 +1,230 @@
+% Formatting-only transcription of EE3600_Practical_2_Task_Sheet_Updated.pdf.
+% Preserve the coordinator-supplied Codex revisions, including simulation
+% starting choices Kp0=0.5/K and Ti0=5*tau; do not change website or firmware.
+\documentclass[10pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathpazo}
+\usepackage{amsmath,amssymb,booktabs,array,tabularx,enumitem}
+\usepackage[a4paper,left=18mm,right=18mm,top=19mm,bottom=19mm,headheight=12pt,headsep=10pt,footskip=22pt]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{fancyhdr,lastpage}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{ink}{HTML}{19313F}
+\definecolor{accent}{HTML}{08666C}
+\definecolor{soft}{HTML}{F0F7F8}
+\definecolor{rulegrey}{HTML}{CAD7DD}
+\definecolor{muted}{HTML}{50636E}
+\hypersetup{colorlinks=true,urlcolor=accent,linkcolor=accent,pdftitle={Practical 2: DC Motor Speed Control with P and PI},pdfauthor={EE3600 / EE5610},pdfsubject={Codex-updated task sheet; formatting-only revision}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\setlength{\emergencystretch}{2em}
+\setlength{\abovedisplayskip}{6pt}
+\setlength{\belowdisplayskip}{6pt}
+\setlength{\abovedisplayshortskip}{4pt}
+\setlength{\belowdisplayshortskip}{4pt}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=2.2pt,topsep=4pt,parsep=0pt}
+\renewcommand{\arraystretch}{1.22}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\fontsize{8.4}{10}\selectfont\color{muted}EE3600 / EE5610\quad Automation and Control Systems}
+\fancyhead[R]{\fontsize{8.4}{10}\selectfont\color{muted}Practical 2}
+\fancyfoot[L]{\fontsize{8.4}{10}\selectfont\color{muted}P and PI speed control\;|\;27 October 2026}
+\fancyfoot[R]{\fontsize{8.4}{10}\selectfont\color{muted}\thepage/\pageref*{LastPage}}
+\renewcommand{\headrulewidth}{0.35pt}
+\renewcommand{\footrulewidth}{0.25pt}
+\newcommand{\sect}[1]{\par\vspace{5pt}{\fontsize{13}{15.4}\selectfont\color{accent}\bfseries #1}\par\vspace{2pt}}
+\newcommand{\sub}[1]{\par\vspace{3pt}{\bfseries #1}\par\vspace{1pt}}
+\newcommand{\note}[1]{\par\vspace{4pt}\begingroup\setlength{\fboxsep}{8pt}\colorbox{soft}{\parbox{\dimexpr\linewidth-16pt\relax}{#1}}\endgroup\par\vspace{4pt}}
+\newcommand{\ui}[1]{\textbf{#1}}
+\newcommand{\blank}[1]{\rule{#1}{0.35pt}}
+\begin{document}
+\fontsize{10.5}{12.6}\selectfont\color{ink}
+{\fontsize{22}{25}\selectfont\bfseries Practical 2}\par
+{\fontsize{17}{21}\selectfont\bfseries DC Motor Speed Control with P and PI}\par\vspace{5pt}
+Name / group: \blank{86mm}\hfill Date: \blank{28mm}
+\note{\textbf{Main learning task:} explain why proportional control leaves a speed offset and how integral action removes it. Reuse the Practical 1 model, simulate P and PI, test a reviewed PI candidate, then verify three fresh repeats. \textbf{Position is optional in simulation only.}}
+Website: \href{https://ericwangjcu.github.io/EE3600-Motor-Practicals/practical2-control.html}{\textbf{Open Practical 2 -- speed control with P and PI}}\\[-1pt]
+{\fontsize{8.7}{10.3}\selectfont\url{https://ericwangjcu.github.io/EE3600-Motor-Practicals/practical2-control.html}}
+
+\sect{1. Carry forward the Practical 1 model}
+Select the same motor used in Practical 1. The two website choices are:
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}Y C{37mm} C{48mm}@{}}
+\toprule
+\rowcolor{soft}\textbf{Motor selection}&\textbf{Gearbox ratio, $N$}&\textbf{Motor encoder counts/rev}\\
+\midrule
+6 V / 280 RPM output&21.3:1&44\\
+6 V / 1360 RPM output&4.4:1&44\\
+\bottomrule
+\end{tabularx}
+\end{center}
+Both use the same P2 UF2. The selector changes the gearbox conversion, not your measured model or controller gains.
+
+Use your existing experimental gain $\overline K$, time constant $\overline\tau$ and gearbox ratio $N$. Do not repeat identification, voltage/speed measurements, physical-parameter derivations or P1 model validation.
+\[
+G_{P1}(s)=\frac{\overline K}{\overline\tau s+1}
+\qquad\text{[gearbox-output rad/s per volt].}
+\]
+The website uses \textbf{motor-shaft RPM} and \textbf{fractional duty} $u$ ($0.40=40\%$). With the actual declared supply $V_s$ and nominal approximation $V_{\mathrm{motor}}\approx V_su$:
+\[
+G_n(s)=\frac{K}{\tau s+1},\qquad
+K=\overline K\,N\,\frac{60}{2\pi}\,V_s,\qquad
+\tau=\overline\tau.
+\]
+\begin{center}\small $K$: motor RPM per duty fraction. $\tau$: seconds.\end{center}
+The conversion changes the gain, not the time constant. $K$ is the plant gain, not controller gain $K_p$. Keep your own motor/gearbox/load and record the supply and units. Driver losses and nonlinear behaviour are not separately represented by this voltage scaling.
+\vspace{4pt}
+\begin{tabularx}{\linewidth}{@{}Y Y Y Y Y@{}}
+\toprule
+\rowcolor{soft}\textbf{$\overline K$ [rad/s/V]}&\textbf{$\tau$ [s]}&\textbf{$N$}&\textbf{$V_s$ [V]}&\textbf{Converted $K$}\\
+\midrule
+\rule{0pt}{26pt}&&&&\\\bottomrule
+\end{tabularx}
+\note{\textbf{Website section 1:} select your motor and actual supply, enter your P1 gain and time constant, then choose the agreed target in motor RPM. Select \ui{Use my P1 model}. The model is converted once; no controller gains are applied.}
+Follow the website in order: \textbf{1 P1 model $\to$ 2 P only $\to$ 3 Add I $\to$ 4 Targets $\to$ 5 Pico test $\to$ 6 Results.} Use Next/Back or the numbered sections.
+
+\newpage
+\sect{2. Analyse and simulate P-only control}
+Use unity negative feedback, $e=r-n$, with $C(s)=K_p$. Derive the closed-loop response:
+\[
+T_P(s)=\frac{KK_p}{\tau s+1+KK_p},\qquad
+\tau_{\mathrm{cl}}=\frac{\tau}{1+KK_p},\qquad
+\frac{e_{\mathrm{ss}}}{r}=\frac{1}{1+KK_p}.
+\]
+\sub{Choose an initial P gain}
+Use the converted plant gain $K$ from section 1. Choose a modest initial loop gain:
+\[
+KK_{p,0}=0.5\qquad\Longrightarrow\qquad\boxed{K_{p,0}=\frac{0.5}{K}.}
+\]
+This deliberately demonstrates offset. The factor 0.5 is a teaching starting choice, not an optimal-gain formula. Gain units are duty/RPM.
+\begin{enumerate}
+\item Set $K_i=K_d=0$. Enter $K_{p,0}$ as the base P gain. Compare $0.5\times$, $1\times$ and $2\times$ this base at the same reference.
+\item Plot reference and speed; record final speed, offset, time constant and required duty.
+\item Explain why P needs a remaining error to supply the drive needed for steady rotation.
+\end{enumerate}
+For this ideal first-order model, positive P gives a monotonic response with \textbf{no overshoot}. Increasing P speeds the response and reduces, but does not eliminate, the offset. Settling around the wrong final speed is not successful target tracking. A physical P-only trial is not required.
+
+The control website's Compare P panel uses the ideal model. The separate legacy limited simulator includes a fixed actuator lag, so its P response need not have the same no-overshoot property.
+
+\sect{3. Add I and tune PI in simulation}
+\[
+C_{\mathrm{PI}}(s)=K_p+\frac{K_i}{s},\qquad
+T_{\mathrm{PI}}(s)=\frac{K(K_ps+K_i)}{\tau s^2+(1+KK_p)s+KK_i}.
+\]
+I accumulates persistent error. At zero error, the accumulated integral contribution can remain nonzero and supply the required steady drive. Zero ideal step error assumes a stable loop and an achievable target.
+\sub{Choose an initial I gain, then refine}
+Keep your selected P gain fixed and D = 0. Express PI using the integral time:
+\[
+C_{\mathrm{PI}}(s)=K_p\!\left(1+\frac{1}{T_i s}\right),\qquad K_i=\frac{K_p}{T_i}.
+\]
+$T_i$ is the integral time in seconds, not the settling time. For constant error, the integral contribution equals the proportional contribution after this time.
+\[
+T_{i,0}=5\tau\qquad\Longrightarrow\qquad\boxed{K_{i,0}=\frac{K_p}{5\tau}.}
+\]
+The factor 5 starts integral action slowly relative to the plant. It is a simulation heuristic, not a lecture-derived optimum or an approved hardware setting.
+\begin{enumerate}
+\item Enter $K_{i,0}$ as the base I gain and compare $0.5\times$, $1\times$ and $2\times$ it, holding P fixed. Inspect speed, duty, overshoot, rise, settling and final error.
+\item If tracking is too slow, increase I in simulation. If overshoot or oscillation grows, reduce I. Check the whole trace; a smaller final error alone is not a pass.
+\item If I changes alone cannot meet the targets, adjust P one step at a time and repeat the I comparison. Record each candidate, its results and the reason for the change; save the initial and selected designs.
+\item Check the complete response, including the PI zero at $-K_i/K_p$. Denominator-only overshoot formulas do not determine this response.
+\item Before hardware, check duty limits, the 10 ms controller interval and declared filtering in MATLAB/Simulink. Do not add measurement lag twice if included in the P1 fit. Obtain tutor review before entering hardware gains.
+\end{enumerate}
+\textbf{Worked simulation start only:} if $K=5955.553$ and $\tau=0.051$ s, $K_{p,0}=0.00008396$, $T_{i,0}=0.255$ s and $K_{i,0}=0.0003292$. Use your own $K$ and $\tau$. If you select a different P, recalculate the starting I from that P. These are not the final bench gains.
+
+\textbf{PI is sufficient when it meets the requirements.} D was not needed in the reported successful speed tests. No extra time-constant helper or pole-choice exercise is required.
+
+\newpage
+\sub{How the three lecture methods apply}
+\begin{tabularx}{\linewidth}{@{}p{37mm}Y@{}}
+\toprule
+\rowcolor{soft}\textbf{Method}&\textbf{Use in this practical}\\\midrule
+Model-based analysis&Derive P/PI behaviour and explain gain effects.\\
+Computational tuning&Adjust or search gains in simulation. State the settings and criteria, then validate one reviewed candidate.\\
+Ziegler--Nichols&Explain both methods and assess applicability. The ideal model has no positive reaction-curve delay and no finite positive ultimate gain. Use a separate suitable tutor example for numerical practice.\\
+\bottomrule
+\end{tabularx}
+\par\vspace{5pt}
+\textbf{These are not three compulsory hardware exercises.} Do not invent a delay or ultimate gain, or increase physical gain to force sustained oscillation.
+
+\sect{4. Speed requirements and measurement conventions}
+Use one agreed achievable positive step from rest, with the same target, supply, load and limits throughout. The reported reference kit used \textbf{1000 motor RPM at 6 V}; this is not a universal target for every kit.
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}p{32mm}Y@{}}
+\toprule
+\rowcolor{soft}\textbf{Quantity}&\textbf{Requirement}\\\midrule
+Overshoot&$\leq5\%$ of the commanded step, beyond the final target.\\
+10--90\% rise&$\leq0.50$ s. Also report command-to-10\% time to expose startup delay.\\
+Settling&$\leq1.00$ s from the command event; all later assessment samples in band, with $\geq2$ s final in-band dwell.\\
+Final error&Last-2-second mean absolute error $\leq\max(2\%\text{ of target},2q)$. Report signed bias too.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\sub{Encoder-aware assessment band}
+For $C_m$ decoded counts per motor revolution and the 50 ms speed-measurement window:
+\[
+q=\frac{60}{0.050C_m}\quad\text{motor RPM}.
+\]
+The settling band is centred on the commanded final target $r_f$:
+\[
+r_f\pm\max\!\left(0.02|r_f-r_0|,\,2q\right).
+\]
+For $C_m=44$, $2q=54.545$ motor RPM. At a 1000 RPM target this is \textbf{$\pm5.45\%$, not strict $\pm2\%$}. State which term governs the band. The ideal simulation comparison reports strict 2\% separately.
+\note{\textbf{Assess against the commanded target.} Measure time from the command, not from the start of motion. Faults, incomplete recordings or insufficient final dwell cannot pass.}
+\vspace{10pt}
+Agreed target: \blank{29mm} motor RPM\hfill Assessment-band half-width: \blank{22mm} motor RPM
+
+\newpage
+\sect{5. Website and Pico workflow}
+The website sections 1--6 follow this sheet. Only one section is shown at a time; use Next/Back or the numbered section buttons. The motor selector is in section 1.
+\begin{enumerate}[itemsep=8pt]
+\item \textbf{Section 1 -- P1 model.} Select your motor and actual supply, enter your own $\overline K$ and $\overline\tau$, and choose the agreed target in motor RPM. Select \ui{Use my P1 model}. The model is converted once for the following simulation sections; no gains are applied.
+\item \textbf{Section 2 -- P only.} Enter a base P gain and compare $0.5\times$, $1\times$ and $2\times$ P. Save the simulated CSV and record the offset and speed of response.
+\item \textbf{Section 3 -- Add I.} Keep the selected base P fixed; compare three I settings. Refine and justify your candidate. Use MATLAB/Simulink to check the declared limits and sampled behaviour before tutor review.
+\item \textbf{Section 4 -- Targets.} Review the response targets and encoder-aware band in section 4 of this sheet.
+\item \textbf{Section 5 -- Pico test.} Use desktop Chrome/Edge and the existing P2 UF2. Select \ui{Connect Pico}, then \ui{Apply configuration} while disarmed. The chosen profile sets $N$ and motor counts per revolution automatically; check the displayed readback and tutor-approved duty limit. Enter your reviewed $K_p$ and $K_i$. D remains zero and the normal trial is 10 s.
+\item \textbf{Arm \& run speed trial.} Inspect speed and duty. \ui{STOP} removes drive; allow coast-down. A fault requires tutor diagnosis, not an automatic retry.
+\item \textbf{Section 6 -- Results.} Select \ui{Analyse response} $\to$ \ui{Save CSV}. Save before another trial. Stop before changing a gain; document each refinement.
+\item \textbf{Freeze and repeat three times.} Retain every attempt, reload saved P2 CSVs and check reproducible metrics. Do not change gains between final repeats.
+\end{enumerate}
+\note{\textbf{Gain units are the same in the simplified comparison and hardware panels.}\\
+$K_p$: duty fraction/RPM. $K_i$: duty fraction/(RPM$\cdot$s).\\
+Only the separate legacy simulator uses percent duty/output RPM: divide those gains by $100\times N$ before hardware entry. Unit conversion alone does not match filtering or sampling.}
+\note{\textbf{Do not apply a 67\% minimum-duty clamp or hidden starting boost.} The report only establishes that 67\% produced movement in that short check, not an exact threshold. A 100\% ceiling was approved for the reported 6 V bench, not every kit. On a fault, stop and obtain tutor diagnosis before restarting. Physical position controls are not part of this practical.}
+\vspace{10pt}
+Reviewed PI candidate:\quad $K_p=$ \blank{28mm}\quad $K_i=$ \blank{28mm}\quad $K_d=0$.
+
+\newpage
+\sect{6. Results and submission}
+\begin{tabularx}{\linewidth}{@{}p{29mm}p{23mm}C{22mm}C{20mm}C{24mm}Y@{}}
+\toprule
+\rowcolor{soft}\textbf{Case}&\textbf{Gains}&\textbf{Overshoot (\%)}&\textbf{Rise (s)}&\textbf{Settling (s)}&\textbf{Final MAE / bias (RPM)}\\\midrule
+P simulations\rule{0pt}{26pt}&&&&&\\\midrule
+PI simulations\newline initial/final\rule{0pt}{26pt}&&&&&\\\midrule
+Initial hardware\rule{0pt}{26pt}&&&&&\\\midrule
+Final repeat 1\rule{0pt}{26pt}&&&&&\\\midrule
+Final repeat 2\rule{0pt}{26pt}&&&&&\\\midrule
+Final repeat 3\rule{0pt}{26pt}&&&&&\\\bottomrule
+\end{tabularx}
+\par\vspace{5pt}
+Submit carried-forward P1 values and the unit conversion, P/PI analysis, simulation/tuning record, new P2 CSVs, speed/reference/duty plots, the comparison table and discussion. \textbf{Do not resubmit P1 identification work.} Preserve all raw timestamps; exclude only explicitly reported pre-command transition frames from assessment, never startup delay or failed responses.
+
+Explain P's offset, how I supplies steady drive, what increasing I changed, model/hardware differences, whether each final repeat passed, the assessment band, and why the two Ziegler--Nichols methods do not directly fit this ideal model.
+
+\sub{Reported bench reference -- not a prescribed student answer}
+One unloaded 6 V kit, target 1000 motor RPM, $N=21.3$ and $C_m=44$: $K_p=0.0001284515583$, $K_i=0.0010074632025$, $K_d=0$. Three fresh reported repeats met numerical speed targets. Worst overshoot: 3.655\%; rise: 0.2833 s; settling: 0.962 s; final MAE: 13.465 RPM; band: $\pm54.545$ RPM. These are supplied report values, not new website measurements. A later $N=21.6$ estimate does not rewrite those historical runs.
+
+\sect{7. Optional position extension -- simulation only}
+\[
+G_\theta(s)=\frac{6}{N}\frac{G_n(s)}{s}\qquad\text{[output degrees / duty fraction].}
+\]
+Use the selected lecture's position exercise in MATLAB/Simulink: compare P and PD/PID, state the controller structure and reference, and assess its optional simulation criteria (overshoot $\leq5\%$, $0.25\leq\text{settling time}\leq0.80$ s and zero ideal final error). Do not copy speed gains directly. Both reported physical position candidates faulted; neither is a validated bench demonstration. \textbf{No position hardware trial is required.}
+
+\sub{Instructor release status}
+{\fontsize{9}{11}\selectfont
+The supplied bench report supports numerical speed performance only at the stated operating point. The revised page needs a physical native-browser trial, CSV export/re-import against real records and a separate physical USB-removal check before complete end-to-end validation is claimed. Browser tests with synthetic CSVs do not establish hardware performance.
+
+Basis: existing Practical 1 experimental model; selected PID lecture; subject coordinator's revised P/PI workflow and supplied bench reports. Lecture slides, Practical 1 and firmware are unchanged. PDF aligned with the 27 October 2026 online task sheet.\par}
+\end{document}
